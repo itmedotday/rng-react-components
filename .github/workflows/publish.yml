@@ -1,0 +1,125 @@
+name: Publish
+
+on:
+  # Disabled during history migration; re-enable before the next release (v0.1.4+).
+  # release:
+  #   types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to verify (must match package.json), e.g. 0.1.0
+        required: true
+        default: "0.1.0"
+      registry_target:
+        description: Which registries to publish
+        type: choice
+        options:
+          - both
+          - github
+          - npm
+        default: both
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Verify tag matches package.json version
+        env:
+          TAG: ${{ github.event.release.tag_name || format('v{0}', github.event.inputs.version) }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG_NO_V="${TAG#v}"
+          echo "Release tag: ${TAG}"
+          echo "package.json: ${VERSION}"
+          if [ -z "${TAG}" ] || [ "${TAG_NO_V}" != "${VERSION}" ]; then
+            echo "Tag version does not match package.json version."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install chromium
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build library
+        run: npm run build:lib
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: |
+            dist/
+            package.json
+            README.md
+            LICENSE
+
+  publish-github:
+    needs: validate
+    if: github.event_name == 'release' || github.event.inputs.registry_target != 'npm'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+
+      - name: Setup Node (GitHub Packages auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://npm.pkg.github.com
+          scope: '@itme.day'
+
+      - name: Publish to GitHub Packages
+        run: npm publish --ignore-scripts --registry https://npm.pkg.github.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    needs: validate
+    if: github.event_name == 'release' || github.event.inputs.registry_target != 'github'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+
+      - name: Setup Node (npmjs.org auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish to npmjs.org
+        run: npm publish --ignore-scripts --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
