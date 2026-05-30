@@ -1,6 +1,6 @@
 {
   "name": "@itme.day/rng-react-components",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "High-fidelity RNG and gaming-inspired UI components for React and TypeScript",
   "author": "Daylen Nguyen",
   "license": "MIT",
