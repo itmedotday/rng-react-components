@@ -22,6 +22,11 @@ export type {
 } from './components/CoinFlip/types';
 export { Coin3D } from './components/CoinFlip/components/Coin3D';
 export type { Coin3DProps } from './components/CoinFlip/components/Coin3D';
+export { ClickToFlipCoin } from './components/CoinFlip/components/ClickToFlipCoin';
+export type {
+  ClickToFlipCoinHandle,
+  ClickToFlipCoinProps,
+} from './components/CoinFlip/types';
 export { CoinFlipHeader } from './components/CoinFlip/components/CoinFlipHeader';
 export type { CoinFlipHeaderProps, CoinFlipStats } from './components/CoinFlip/components/CoinFlipHeader';
 export { CoinFlipRules } from './components/CoinFlip/components/CoinFlipRules';
@@ -54,6 +59,14 @@ export { D20RollHeader } from './components/D20Roll/components/D20RollHeader';
 export type { D20RollHeaderProps, D20RollStats } from './components/D20Roll/components/D20RollHeader';
 export { D20Visual } from './components/D20Roll/components/D20Visual';
 export type { D20VisualProps } from './components/D20Roll/components/D20Visual';
+export { D20Die3D } from './components/D20Roll/components/D20Die3D';
+export type { D20Die3DProps } from './components/D20Roll/components/D20Die3D';
+export { ClickToRollD20 } from './components/D20Roll/components/ClickToRollD20';
+export type {
+  ClickToRollD20Handle,
+  ClickToRollD20Props,
+  ClickToRollD20Result,
+} from './components/D20Roll/types';
 export { DcControl } from './components/D20Roll/components/DcControl';
 export type { DcControlProps } from './components/D20Roll/components/DcControl';
 export { D20RollHistory } from './components/D20Roll/components/D20RollHistory';

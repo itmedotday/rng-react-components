@@ -12,6 +12,20 @@ export interface CoinFlipHandle {
   flip: () => void;
 }
 
+export interface ClickToFlipCoinHandle {
+  flip: () => void;
+}
+
+export interface ClickToFlipCoinProps {
+  onFlipStart?: () => void;
+  onFlipComplete?: (landed: CoinSide) => void;
+  onIsFlippingChange?: (isFlipping: boolean) => void;
+  flipRequest?: number;
+  disabled?: boolean;
+  className?: string;
+  animationDuration?: number;
+}
+
 export interface CoinFlipProps {
   onFlipStart?: () => void;
   onFlipComplete?: (landed: CoinSide, isWin: boolean) => void;

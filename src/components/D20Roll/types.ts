@@ -12,6 +12,27 @@ export interface D20RollHandle {
   roll: () => void;
 }
 
+export interface ClickToRollD20Handle {
+  roll: () => void;
+}
+
+export interface ClickToRollD20Result {
+  roll: number;
+  isCritical: boolean;
+  isFumble: boolean;
+}
+
+export interface ClickToRollD20Props {
+  onRollStart?: () => void;
+  onRollComplete?: (result: ClickToRollD20Result) => void;
+  onIsRollingChange?: (isRolling: boolean) => void;
+  rollRequest?: number;
+  disabled?: boolean;
+  className?: string;
+  animationDuration?: number;
+  diceSrc?: string;
+}
+
 export interface D20RollProps {
   onRollStart?: () => void;
   onRollComplete?: (roll: number, isWin: boolean) => void;
