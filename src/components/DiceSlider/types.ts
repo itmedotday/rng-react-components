@@ -1,8 +1,12 @@
+import type { ConsoleLayoutOptions } from '../../lib/layoutOptions';
+import type { GameOutcomeBase } from '../../lib/session';
+import type { Rng } from '../../lib/rng';
+
 export interface DiceSliderHandle {
   roll: () => void;
 }
 
-export interface DiceSliderProps {
+export interface DiceSliderProps extends ConsoleLayoutOptions {
   /**
    * Optional callback when the roll animation starts.
    */
@@ -55,13 +59,18 @@ export interface DiceSliderProps {
    * Maximum allowed target value.
    */
   maxTarget?: number;
+
+  /**
+   * Roll animation duration in ms (default: 400).
+   */
+  animationDuration?: number;
+
+  /** Injectable random source for outcome rolls. Defaults to `Math.random`. */
+  rng?: Rng;
 }
 
-export interface RollResult {
-  id: string;
+export interface RollResult extends GameOutcomeBase {
   outcome: number;
-  isWin: boolean;
   target: number;
   isRollOver: boolean;
-  timestamp: Date;
 }

@@ -2,12 +2,15 @@ import React, {
   forwardRef,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useRef,
   useState,
 } from 'react';
 import { useSpring } from '@react-spring/web';
-import { Trophy, XCircle, Percent, Flame } from 'lucide-react';
+import { createOutcomeId } from '../../lib/session';
+import { resolveRng } from '../../lib/rng';
+import { useGameSession } from '../../lib/useGameSession';
+import { useGameTrigger } from '../../lib/useGameTrigger';
+import { StatsHeader } from '../../lib/components/StatsHeader';
 import type { DiceSliderHandle, DiceSliderProps, RollResult } from './types';
 import { HistoryLedger } from './components/HistoryLedger';
 import { InteractiveTrack } from './components/InteractiveTrack';
@@ -27,44 +30,26 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
     className = '',
     minTarget = 0.01,
     maxTarget = 99.99,
+    animationDuration = 400,
+    rng: rngProp,
+    showHeader = false,
+    showHistory = false,
   },
   ref,
 ) {
+  const rng = resolveRng(rngProp);
+  const trackSession = showHeader || showHistory;
   // --- Core State ---
   const [rollTarget, setRollTarget] = useState<number>(initialTarget);
   const [isRollOver, setIsRollOver] = useState<boolean>(initialIsRollOver);
-  const [isRolling, setIsRolling] = useState<boolean>(false);
 
   // Rolling & Outcome
   const [rollOutcome, setRollOutcome] = useState<number | null>(null);
   const [previousRoll, setPreviousRoll] = useState<number | null>(null);
   const [cyclingNumber, setCyclingNumber] = useState<string>("50.00");
   const [rollStatus, setRollStatus] = useState<'idle' | 'win' | 'loss'>('idle');
-  const [rollHistory, setRollHistory] = useState<RollResult[]>(initialHistory);
-
-  const [stats, setStats] = useState(() => {
-    let wins = 0;
-    let losses = 0;
-    let currentStreak = 0;
-    let maxStreak = 0;
-    const reversed = [...initialHistory].reverse();
-    for (const h of reversed) {
-      if (h.isWin) {
-        wins++;
-        currentStreak++;
-        maxStreak = Math.max(maxStreak, currentStreak);
-      } else {
-        losses++;
-        currentStreak = 0;
-      }
-    }
-    return {
-      totalPlays: initialHistory.length,
-      wins,
-      losses,
-      currentStreak,
-      maxStreak,
-    };
+  const { stats, history: rollHistory, recordOutcome } = useGameSession<RollResult>({
+    initialHistory: trackSession ? initialHistory : [],
   });
 
   // Raw Input Strings (Allows natural typing and formats on blur)
@@ -77,19 +62,9 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  const isRollingRef = useRef(false);
   const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cycleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const prevRollRequestRef = useRef(rollRequest);
-
-  const setRolling = useCallback(
-    (value: boolean) => {
-      isRollingRef.current = value;
-      setIsRolling(value);
-      onIsRollingChange?.(value);
-    },
-    [onIsRollingChange],
-  );
+  const executeRef = useRef<() => void>(() => {});
 
   const clearRollTimer = useCallback(() => {
     if (rollTimerRef.current !== null) {
@@ -102,12 +77,18 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
     }
   }, []);
 
-  useEffect(() => clearRollTimer, [clearRollTimer]);
+  const { isBusy: isRolling, isBusyRef: isRollingRef, setBusy, guardExecute } = useGameTrigger(ref, {
+    disabled,
+    request: rollRequest,
+    onBusyChange: onIsRollingChange,
+    execute: () => executeRef.current(),
+    handle: { roll: () => executeRef.current() },
+    clearTimers: clearRollTimer,
+  });
 
   // Sync Input Fields when target/mode changes from slider
   useEffect(() => {
     if (!isDragging) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRawTarget(rollTarget.toFixed(2));
       if (isRollOver) {
         setRawChance((100 - rollTarget).toFixed(4));
@@ -273,16 +254,16 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
   // --- Rolling Simulation Logic ---
 
   const triggerRoll = useCallback(() => {
-    if (isRollingRef.current || disabled) return;
+    if (!guardExecute()) return;
 
     clearRollTimer();
-    setRolling(true);
+    setBusy(true);
     setRollStatus('idle');
     setRollOutcome(null);
 
     onRollStart?.();
 
-    const outcomeValue = parseFloat((Math.random() * 100).toFixed(2));
+    const outcomeValue = parseFloat((rng() * 100).toFixed(2));
     const isWin = isRollOver ? outcomeValue >= rollTarget : outcomeValue <= rollTarget;
 
     cycleIntervalRef.current = setInterval(() => {
@@ -308,56 +289,39 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
       setRollOutcome(outcomeValue);
       const outcomeStatus = isWin ? 'win' : 'loss';
       setRollStatus(outcomeStatus);
-      setRolling(false);
+      setBusy(false);
       setPreviousRoll(outcomeValue);
 
-      const newHistoryItem: RollResult = {
-        id: Math.random().toString(36).substring(2, 9),
-        outcome: outcomeValue,
-        isWin,
-        target: rollTarget,
-        isRollOver,
-        timestamp: new Date(),
-      };
-
-      setRollHistory((prev) => [newHistoryItem, ...prev].slice(0, 15));
-
-      setStats((prev) => {
-        const newWins = isWin ? prev.wins + 1 : prev.wins;
-        const newLosses = isWin ? prev.losses : prev.losses + 1;
-        const currentStreak = isWin ? prev.currentStreak + 1 : 0;
-        const maxStreak = Math.max(prev.maxStreak, currentStreak);
-        return {
-          totalPlays: prev.totalPlays + 1,
-          wins: newWins,
-          losses: newLosses,
-          currentStreak,
-          maxStreak,
-        };
-      });
+      if (trackSession) {
+        recordOutcome({
+          id: createOutcomeId(),
+          outcome: outcomeValue,
+          isWin,
+          target: rollTarget,
+          isRollOver,
+          timestamp: new Date(),
+        });
+      }
 
       onRollComplete?.(outcomeValue, isWin);
-    }, 400);
+    }, animationDuration);
   }, [
+    animationDuration,
     badgeApi,
     clearRollTimer,
-    disabled,
+    guardExecute,
     isRollOver,
     onRollComplete,
     onRollStart,
     previousRoll,
+    recordOutcome,
+    rng,
     rollTarget,
-    setRolling,
+    setBusy,
+    trackSession,
   ]);
 
-  useImperativeHandle(ref, () => ({ roll: triggerRoll }), [triggerRoll]);
-
-  useEffect(() => {
-    if (rollRequest === undefined) return;
-    if (prevRollRequestRef.current === rollRequest) return;
-    prevRollRequestRef.current = rollRequest;
-    triggerRoll();
-  }, [rollRequest, triggerRoll]);
+  executeRef.current = triggerRoll;
 
   return (
     <div className={`w-full max-w-2xl glass-panel rounded-3xl p-8 relative flex flex-col items-center select-none transition-all duration-300
@@ -366,53 +330,15 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
       ${className}
     `}>
 
-      {/* --- Top Panel: Title & Stats --- */}
-      <div className="w-full flex items-center justify-between mb-8 border-b border-zinc-800/60 pb-5">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-          <h2 className="text-lg font-bold tracking-wide text-zinc-300">PROBABILITY SLIDER</h2>
-        </div>
-
-        {/* Session Stats (Right) */}
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5 text-emerald-400" />
-              Wins
-            </span>
-            <div className="text-lg font-black font-mono text-emerald-400 tracking-tight leading-none">
-              {stats.wins}
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <XCircle className="w-3.5 h-3.5 text-rose-400" />
-              Losses
-            </span>
-            <div className="text-lg font-black font-mono text-rose-400 tracking-tight leading-none">
-              {stats.losses}
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Percent className="w-3.5 h-3.5 text-emerald-400" />
-              Win Ratio
-            </span>
-            <div className="text-lg font-black font-mono text-emerald-400 tracking-tight leading-none">
-              {stats.totalPlays === 0 ? '0.00' : ((stats.wins / stats.totalPlays) * 100).toFixed(2)}%
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
-              Win Streak
-            </span>
-            <div className="text-lg font-black font-mono text-zinc-300 tracking-tight leading-none">
-              {stats.currentStreak}
-            </div>
-          </div>
-        </div>
-      </div>
+      {showHeader && (
+        <StatsHeader
+          title="PROBABILITY SLIDER"
+          icon={
+            <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+          }
+          stats={stats}
+        />
+      )}
 
       {/* --- Middle Section: Slider Console Container --- */}
       <InteractiveTrack
@@ -456,25 +382,8 @@ export const DiceSlider = forwardRef<DiceSliderHandle, DiceSliderProps>(function
           disabled={disabled}
         />
 
-        <HistoryLedger history={rollHistory} />
+        {showHistory && <HistoryLedger history={rollHistory} />}
       </div>
-
-      {/* Slide-in CSS utility rule for history updates */}
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(12px) scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-          }
-        }
-        .animate-slide-in {
-          animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
     </div>
   );
 });

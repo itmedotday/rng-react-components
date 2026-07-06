@@ -1,15 +1,16 @@
-export interface WheelSpinResult {
-  id: string;
-  isWin: boolean;
+import type { ConsoleLayoutOptions } from '../../lib/layoutOptions';
+import type { GameOutcomeBase } from '../../lib/session';
+import type { Rng } from '../../lib/rng';
+
+export interface WheelSpinResult extends GameOutcomeBase {
   outcomeAngle: number;
-  timestamp: Date;
 }
 
 export interface RngWheelHandle {
   spin: () => void;
 }
 
-export interface RngWheelProps {
+export interface RngWheelProps extends ConsoleLayoutOptions {
   /**
    * Optional callback when the spin animation starts.
    */
@@ -51,4 +52,7 @@ export interface RngWheelProps {
    * Initial win chance percentage (default: 10.00).
    */
   initialWinChance?: number;
+
+  /** Injectable random source for outcome rolls. Defaults to `Math.random`. */
+  rng?: Rng;
 }

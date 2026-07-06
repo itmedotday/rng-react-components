@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within, waitFor } from 'storybook/test';
 import { D20Die3D } from './D20Die3D';
-import { ClickToRollD20 } from './ClickToRollD20';
+import { D20Roll } from '../D20Roll';
 
 const meta: Meta<typeof D20Die3D> = {
   title: 'Components/D20Roll/Submodules/D20Die3D',
@@ -83,7 +83,7 @@ export const Nat1: Story = {
 };
 
 export const ClickToRoll: Story = {
-  render: () => <ClickToRollD20 />,
+  render: () => <D20Roll />,
   parameters: {
     backgrounds: { default: 'transparent' },
   },

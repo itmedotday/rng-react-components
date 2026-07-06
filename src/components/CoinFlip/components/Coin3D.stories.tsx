@@ -4,7 +4,7 @@ import { expect, userEvent, within, waitFor } from 'storybook/test';
 
 import { Coin3D } from './Coin3D';
 
-import { ClickToFlipCoin } from './ClickToFlipCoin';
+import { CoinFlip } from '../CoinFlip';
 
 
 
@@ -114,7 +114,7 @@ export const Spinning: Story = {
 
 export const ClickToFlip: Story = {
 
-  render: () => <ClickToFlipCoin />,
+  render: () => <CoinFlip />,
 
   parameters: {
 

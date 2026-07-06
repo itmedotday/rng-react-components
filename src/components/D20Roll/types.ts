@@ -1,20 +1,20 @@
-export interface D20RollResult {
-  id: string;
+import type { ConsoleLayoutOptions } from '../../lib/layoutOptions';
+import type { GameOutcomeBase } from '../../lib/session';
+import type { Rng } from '../../lib/rng';
+
+export interface D20RollResult extends GameOutcomeBase {
   roll: number;
   target: number;
-  isWin: boolean;
   isCritical: boolean;
   isFumble: boolean;
-  timestamp: Date;
 }
 
 export interface D20RollHandle {
   roll: () => void;
 }
 
-export interface ClickToRollD20Handle {
-  roll: () => void;
-}
+/** @deprecated Use `D20RollHandle` instead. */
+export type ClickToRollD20Handle = D20RollHandle;
 
 export interface ClickToRollD20Result {
   roll: number;
@@ -22,7 +22,7 @@ export interface ClickToRollD20Result {
   isFumble: boolean;
 }
 
-export interface ClickToRollD20Props {
+export interface D20RollProps {
   onRollStart?: () => void;
   onRollComplete?: (result: ClickToRollD20Result) => void;
   onIsRollingChange?: (isRolling: boolean) => void;
@@ -31,9 +31,17 @@ export interface ClickToRollD20Props {
   className?: string;
   animationDuration?: number;
   diceSrc?: string;
+  rng?: Rng;
 }
 
-export interface D20RollProps {
+/** @deprecated Use `D20RollProps` instead. */
+export type ClickToRollD20Props = D20RollProps;
+
+export interface D20RollConsoleHandle {
+  roll: () => void;
+}
+
+export interface D20RollConsoleProps extends ConsoleLayoutOptions {
   onRollStart?: () => void;
   onRollComplete?: (roll: number, isWin: boolean) => void;
   onIsRollingChange?: (isRolling: boolean) => void;
@@ -43,8 +51,8 @@ export interface D20RollProps {
   disabled?: boolean;
   className?: string;
   animationDuration?: number;
-  /** Override die image URL; defaults to bundled src/assets/d20.svg */
   diceSrc?: string;
+  rng?: Rng;
 }
 
 export function computeWinChancePct(target: number): string {

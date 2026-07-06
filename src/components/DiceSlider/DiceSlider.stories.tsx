@@ -36,10 +36,6 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // Verify Title is present
-    const titleElement = canvas.getByText('PROBABILITY SLIDER');
-    await expect(titleElement).toBeInTheDocument();
-
     // Verify inputs render with correct initial values
     const targetInput = canvas.getByRole('textbox', { name: 'Roll Target' });
     const chanceInput = canvas.getByRole('textbox', { name: 'Win Chance' });
@@ -51,6 +47,20 @@ export const Default: Story = {
     const sliderThumb = canvas.getByRole('slider', { name: 'Dice Slider Thumb' });
     await expect(sliderThumb).toBeInTheDocument();
     await expect(sliderThumb).toHaveAttribute('aria-valuenow', '50');
+  },
+};
+
+export const WithHeaderAndHistory: Story = {
+  args: {
+    initialTarget: 50.0,
+    initialIsRollOver: true,
+    showHeader: true,
+    showHistory: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('PROBABILITY SLIDER')).toBeInTheDocument();
+    await expect(canvas.getByText('Win Ratio')).toBeInTheDocument();
   },
 };
 
@@ -174,6 +184,7 @@ export const RollSimulation: Story = {
   args: {
     initialTarget: 50.00,
     initialIsRollOver: true,
+    showHistory: true,
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
@@ -227,6 +238,15 @@ export const Disabled: Story = {
     await expect(rollButton).toBeDisabled();
     await expect(targetInput).toBeDisabled();
     await expect(chanceInput).toBeDisabled();
+  },
+};
+
+// 6b. Custom Animation Speed
+export const FastAnimation: Story = {
+  args: {
+    initialTarget: 50.0,
+    initialIsRollOver: true,
+    animationDuration: 200,
   },
 };
 

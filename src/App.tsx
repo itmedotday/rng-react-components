@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { DiceSlider } from './components/DiceSlider/DiceSlider';
-import { CoinFlip } from './components/CoinFlip/CoinFlip';
+import { CoinFlipConsole } from './components/CoinFlip/CoinFlipConsole';
 import { RngWheel } from './components/RngWheel/RngWheel';
-import { D20Roll } from './components/D20Roll/D20Roll';
+import { D20RollConsole } from './components/D20Roll/D20RollConsole';
 import { ShieldCheck, Flame, Activity, Coins, Dices } from 'lucide-react';
 
 function App() {
@@ -90,16 +90,16 @@ function App() {
 
         {/* Dynamic Game Component Rendering */}
         {activeTab === 'dice' && (
-          <DiceSlider />
+          <DiceSlider showHeader showHistory />
         )}
         {activeTab === 'coin' && (
-          <CoinFlip />
+          <CoinFlipConsole showHeader showHistory showRules showPrediction />
         )}
         {activeTab === 'wheel' && (
-          <RngWheel />
+          <RngWheel showHeader showHistory showRules />
         )}
         {activeTab === 'd20' && (
-          <D20Roll />
+          <D20RollConsole showHeader showHistory showRules />
         )}
       </main>
 

@@ -22,6 +22,20 @@
     0% { box-shadow: 0 0 10px rgba(225, 29, 72, 0.2); }
     100% { box-shadow: 0 0 30px rgba(225, 29, 72, 0.6); }
   }
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(12px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @utility glass-panel {
@@ -48,7 +62,7 @@ body {
   min-height: 100vh;
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-image: 
+  background-image:
     radial-gradient(at 50% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(225, 29, 72, 0.05) 0px, transparent 50%);

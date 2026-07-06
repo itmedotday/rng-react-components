@@ -32,23 +32,27 @@ export const Default: Story = {
   args: {},
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-
-    // Verify Title is present
-    const titleElement = canvas.getByText('RNG WHEEL CONSOLE');
-    await expect(titleElement).toBeInTheDocument();
-
-
-
-    // Verify trigger button is enabled
     const spinButton = canvas.getByRole('button', { name: /spin wheel/i });
     await expect(spinButton).toBeInTheDocument();
     await expect(spinButton).not.toBeDisabled();
   },
 };
 
-// 2. Interactive Spin Action & History Recording Test
+export const FullConsole: Story = {
+  args: {
+    showHeader: true,
+    showHistory: true,
+    showRules: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('RNG WHEEL CONSOLE')).toBeInTheDocument();
+    await expect(canvas.getByText('Win Ratio')).toBeInTheDocument();
+  },
+};
+
 export const SpinSimulation: Story = {
-  args: {},
+  args: { showHistory: true },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const triggerBtn = canvas.getByRole('button', { name: /spin wheel/i });
@@ -70,7 +74,7 @@ export const SpinSimulation: Story = {
       // Verify button is reactivated
       await expect(triggerBtn).not.toBeDisabled();
 
-
+      await expect(canvas.getByText(/last 1 spins/i)).toBeInTheDocument();
     });
   },
 };

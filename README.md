@@ -38,78 +38,43 @@ import '@itme.day/rng-react-components/style.css';
 
 ## 🧩 Components Included
 
-### 🪙 CoinFlip
+### 🪙 CoinFlip (minimal)
 
-A sleek 3D coin flip simulator featuring a dynamic spinning model, history ledger, and predictive selection. It utilizes smooth physics for the spinning animation and tracks user stats like win streaks.
-
-<div align="center">
-  <img src="./public/Screenshot%202026-05-26%20011230.png" alt="Coin Flip Console Screenshot" width="600" />
-</div>
-
-
-#### Props
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `onFlipStart` | `() => void` | | Optional callback when the flip animation begins. |
-| `onFlipComplete` | `(landed: CoinSide, isWin: boolean) => void` | | Optional callback triggered when the coin lands. |
-| `onIsFlippingChange` | `(isFlipping: boolean) => void` | | Optional callback when the flip phase changes (`true` at start, `false` when settled). |
-| `flipRequest` | `number` | | Increment from the parent to trigger a flip (e.g. `setN((n) => n + 1)`). |
-| `initialPrediction` | `'orange' \| 'blue'` | `'orange'` | Starting predicted side for the coin. |
-| `disabled` | `boolean` | `false` | Whether the component and its controls are disabled. |
-| `className` | `string` | `''` | Optional CSS class name for the root element. |
-| `animationDuration` | `number` | `950` | Duration of the flip animation in milliseconds. |
-
-`CoinFlip` also accepts a **ref** with type `CoinFlipHandle` (`{ flip(): void }`) to start a flip imperatively. External triggers respect the same guards as the built-in button (`disabled`, already flipping).
-
-#### External flip control
-
-**Declarative** — bump `flipRequest` when the parent should start a flip:
+Click-to-flip 3D coin — the default export. No glass panel, stats, or history.
 
 ```tsx
-import { useState } from 'react';
 import { CoinFlip } from '@itme.day/rng-react-components';
 
-function App() {
-  const [flipRequest, setFlipRequest] = useState(0);
-
-  return (
-    <>
-      <button type="button" onClick={() => setFlipRequest((n) => n + 1)}>
-        Flip
-      </button>
-      <CoinFlip
-        flipRequest={flipRequest}
-        onIsFlippingChange={(flipping) => {
-          /* sync parent UI */
-        }}
-      />
-    </>
-  );
-}
+<CoinFlip onFlipComplete={(landed) => console.log(landed)} />
 ```
 
-**Imperative** — call `flip()` on the ref:
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `onFlipStart` | `() => void` | | Callback when the flip animation begins. |
+| `onFlipComplete` | `(landed: CoinSide) => void` | | Callback when the coin lands. |
+| `onIsFlippingChange` | `(isFlipping: boolean) => void` | | Flip phase changes. |
+| `flipRequest` | `number` | | Increment to trigger a flip from the parent. |
+| `disabled` | `boolean` | `false` | Disable interaction. |
+| `animationDuration` | `number` | `950` | Flip duration in ms. |
+| `rng` | `Rng` | `Math.random` | Injectable random source. |
+
+### 🪙 CoinFlipConsole
+
+Full composite with optional chrome. Enable header, history, rules, and prediction via props (all default `false` except `showPrediction` which defaults `true`).
 
 ```tsx
-import { useRef } from 'react';
-import { CoinFlip, type CoinFlipHandle } from '@itme.day/rng-react-components';
+import { CoinFlipConsole } from '@itme.day/rng-react-components';
 
-function App() {
-  const coinRef = useRef<CoinFlipHandle>(null);
-
-  return (
-    <>
-      <button type="button" onClick={() => coinRef.current?.flip()}>
-        Flip
-      </button>
-      <CoinFlip ref={coinRef} />
-    </>
-  );
-}
+<CoinFlipConsole
+  showHeader
+  showHistory
+  showRules
+  showPrediction
+  onFlipComplete={(landed, isWin) => console.log(landed, isWin)}
+/>
 ```
 
-
-### 🎲 Dice Slider
+`ClickToFlipCoin` is deprecated — use `CoinFlip`.
 
 A highly interactive, physics-based probability slider replicating high-stakes dice gaming tracks with real-time target adjustments, over/under toggles, and snappy win/loss outcome badges.
 
@@ -130,6 +95,8 @@ A highly interactive, physics-based probability slider replicating high-stakes d
 | `className` | `string` | `''` | Optional CSS class name for the root element. |
 | `minTarget` | `number` | `0.01` | Minimum allowed target value. |
 | `maxTarget` | `number` | `99.99` | Maximum allowed target value. |
+| `showHeader` | `boolean` | `false` | Show session stats header. |
+| `showHistory` | `boolean` | `false` | Show roll history panel. |
 
 
 ### 🎡 RngWheel
