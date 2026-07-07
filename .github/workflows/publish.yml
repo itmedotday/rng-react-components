@@ -93,7 +93,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://npm.pkg.github.com
-          scope: '@itme.day'
+          scope: '@itmedotday'
+
+      - name: Adapt package scope for GitHub Packages
+        run: npm pkg set name=@itmedotday/rng-react-components
 
       - name: Publish to GitHub Packages
         run: npm publish --ignore-scripts --registry https://npm.pkg.github.com
