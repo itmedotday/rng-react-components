@@ -96,8 +96,7 @@ jobs:
           scope: '@itmedotday'
 
       - name: Adapt package scope for GitHub Packages
-        run: |
-          node --input-type=module -e "import { readFileSync, writeFileSync } from 'node:fs'; const pkg = JSON.parse(readFileSync('package.json', 'utf8')); pkg.name = '@itmedotday/rng-react-components'; writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+        run: npm pkg set name=@itmedotday/rng-react-components
 
       - name: Publish to GitHub Packages
         run: npm publish --ignore-scripts --registry https://npm.pkg.github.com
