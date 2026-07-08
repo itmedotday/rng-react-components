@@ -18,7 +18,7 @@ import type {
   RouletteSpinResult,
 } from './types';
 
-// Standard roulette red numbers (0 resolves to green).
+// Standard single-zero roulette red numbers (used by both European and American tables).
 const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
 const ROULETTE_COLORS: RouletteColor[] = ['red', 'black', 'green'];
 

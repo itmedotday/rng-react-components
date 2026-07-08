@@ -17,12 +17,18 @@ import type {
   TwentyOneResult,
 } from './types';
 
+// Arcade tuning: totals begin at 4 and intentionally extend beyond 21 to create frequent bust rounds.
 const MIN_TOTAL = 4;
 const MAX_TOTAL = 27;
 
 function drawTotal(rng: () => number): number {
   // Arcade-style total generation where values above 21 are intentional busts.
   return Math.floor(rng() * (MAX_TOTAL - MIN_TOTAL + 1)) + MIN_TOTAL;
+}
+
+function breakDealerTie(playerTotal: number, dealerTotal: number): number {
+  if (dealerTotal !== playerTotal) return dealerTotal;
+  return Math.min(MAX_TOTAL, dealerTotal + 1);
 }
 
 export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function TwentyOne(
@@ -86,10 +92,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
     onDealStart?.();
 
     const nextPlayerTotal = drawTotal(rng);
-    let nextDealerTotal = drawTotal(rng);
-    if (nextDealerTotal === nextPlayerTotal) {
-      nextDealerTotal = Math.min(MAX_TOTAL, nextDealerTotal + 1);
-    }
+    const nextDealerTotal = breakDealerTie(nextPlayerTotal, drawTotal(rng));
 
     const isWin = nextPlayerTotal <= 21 && (nextDealerTotal > 21 || nextPlayerTotal > nextDealerTotal);
 
