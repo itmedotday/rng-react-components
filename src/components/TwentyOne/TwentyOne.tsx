@@ -12,23 +12,82 @@ import { useGameSession } from '../../lib/useGameSession';
 import { useGameTrigger } from '../../lib/useGameTrigger';
 import { StatsHeader } from '../../lib/components/StatsHeader';
 import type {
+  Card,
+  CardRank,
+  CardSuit,
   TwentyOneHandle,
   TwentyOneProps,
   TwentyOneResult,
 } from './types';
+import { CardHand } from './components/CardHand';
 
 // Arcade tuning: totals begin at 4 and intentionally extend beyond 21 to create frequent bust rounds.
 const MIN_TOTAL = 4;
 const MAX_TOTAL = 27;
 
+const SUITS: CardSuit[] = ['♠', '♥', '♦', '♣'];
+// Face cards (J, Q, K) that all have value 10
+const FACE_RANKS: CardRank[] = ['J', 'Q', 'K'];
+
 function drawTotal(rng: () => number): number {
-  // Arcade-style total generation where values above 21 are intentional busts.
   return Math.floor(rng() * (MAX_TOTAL - MIN_TOTAL + 1)) + MIN_TOTAL;
 }
 
 function breakDealerTie(playerTotal: number, dealerTotal: number): number {
   if (dealerTotal !== playerTotal) return dealerTotal;
   return Math.min(MAX_TOTAL, dealerTotal + 1);
+}
+
+function randomSuit(rng: () => number): CardSuit {
+  return SUITS[Math.floor(rng() * 4)];
+}
+
+/** Create a card object from a numeric value (2–11). */
+function makeCard(value: number, rng: () => number): Card {
+  let rank: CardRank;
+  if (value === 11) {
+    rank = 'A';
+  } else if (value === 10) {
+    // 1-in-4 chance to be a face card instead of '10'
+    const roll = rng();
+    rank = roll < 0.25 ? FACE_RANKS[0] : roll < 0.5 ? FACE_RANKS[1] : roll < 0.75 ? FACE_RANKS[2] : '10';
+  } else {
+    rank = String(value) as CardRank;
+  }
+  return { rank, suit: randomSuit(rng), value };
+}
+
+/**
+ * Generate a list of cards whose values sum to `total` (arcade range: 4–27).
+ *
+ * - totals ≤ 20 → two cards (each 2–10)
+ * - totals 21–27 → three cards (10 + 10 + remainder)
+ */
+function dealCards(total: number, rng: () => number): Card[] {
+  if (total > 20) {
+    // Bust hand: two 10s + remainder
+    const rem = total - 20; // 1–7
+    return [makeCard(10, rng), makeCard(10, rng), makeCard(rem, rng)];
+  }
+
+  // Two cards summing to total, each in [2..10]
+  const minFirst = Math.max(2, total - 10);
+  const maxFirst = Math.min(10, total - 2);
+
+  if (minFirst > maxFirst) {
+    // Degenerate edge case: return one card equal to total (should not occur given MIN_TOTAL=4)
+    return [makeCard(Math.min(total, 10), rng)];
+  }
+
+  const v1 = Math.floor(rng() * (maxFirst - minFirst + 1)) + minFirst;
+  const v2 = total - v1;
+  return [makeCard(v1, rng), makeCard(v2, rng)];
+}
+
+/** Generates a random partial hand (for cycling animation). */
+function randomHand(rng: () => number): Card[] {
+  const n = Math.floor(rng() * 2) + 2; // 2 or 3 cards
+  return Array.from({ length: n }, () => makeCard(Math.floor(rng() * 9) + 2, rng));
 }
 
 export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function TwentyOne(
@@ -55,6 +114,8 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
   const [dealStatus, setDealStatus] = useState<'idle' | 'win' | 'loss'>('idle');
   const [playerTotal, setPlayerTotal] = useState<number | null>(null);
   const [dealerTotal, setDealerTotal] = useState<number | null>(null);
+  const [playerCards, setPlayerCards] = useState<Card[]>([]);
+  const [dealerCards, setDealerCards] = useState<Card[]>([]);
   const { stats, history, recordOutcome } = useGameSession<TwentyOneResult>({
     initialHistory: trackSession ? initialHistory : [],
   });
@@ -96,10 +157,13 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
 
     const isWin = nextPlayerTotal <= 21 && (nextDealerTotal > 21 || nextPlayerTotal > nextDealerTotal);
 
+    // Animate cycling hands during the deal
     cycleIntervalRef.current = setInterval(() => {
       setPlayerTotal(drawTotal(rng));
       setDealerTotal(drawTotal(rng));
-    }, 50);
+      setPlayerCards(randomHand(rng));
+      setDealerCards(randomHand(rng));
+    }, 80);
 
     dealTimerRef.current = setTimeout(() => {
       dealTimerRef.current = null;
@@ -108,16 +172,23 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
         cycleIntervalRef.current = null;
       }
 
+      const finalPlayerCards = dealCards(nextPlayerTotal, rng);
+      const finalDealerCards = dealCards(nextDealerTotal, rng);
+
       const result: TwentyOneResult = {
         id: createOutcomeId(),
         playerTotal: nextPlayerTotal,
         dealerTotal: nextDealerTotal,
+        playerCards: finalPlayerCards,
+        dealerCards: finalDealerCards,
         isWin,
         timestamp: new Date(),
       };
 
       setPlayerTotal(nextPlayerTotal);
       setDealerTotal(nextDealerTotal);
+      setPlayerCards(finalPlayerCards);
+      setDealerCards(finalDealerCards);
       setDealStatus(isWin ? 'win' : 'loss');
       setBusy(false);
 
@@ -141,6 +212,13 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
 
   executeRef.current = triggerDeal;
 
+  const playerHighlight = !isDealing && dealStatus !== 'idle'
+    ? dealStatus === 'win' ? 'win' : 'loss'
+    : null;
+  const dealerHighlight = !isDealing && dealStatus !== 'idle'
+    ? dealStatus === 'win' ? 'loss' : 'win'
+    : null;
+
   return (
     <div
       className={`w-full max-w-2xl glass-panel rounded-3xl p-8 relative flex flex-col items-center select-none transition-all duration-300
@@ -157,34 +235,26 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
         />
       )}
 
-      <div className="w-full relative px-6 py-10 bg-zinc-950/40 border border-zinc-900/80 rounded-2xl mb-8 min-h-[220px]">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center">
-            <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider" id={playerLabelId}>
-              Player
-            </div>
-            <div
-              className="text-5xl font-black font-mono mt-2 text-white"
-              role="status"
-              aria-live="polite"
-              aria-labelledby={playerLabelId}
-            >
-              {playerTotal ?? '—'}
-            </div>
-          </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center">
-            <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider" id={dealerLabelId}>
-              Dealer
-            </div>
-            <div
-              className="text-5xl font-black font-mono mt-2 text-white"
-              role="status"
-              aria-live="polite"
-              aria-labelledby={dealerLabelId}
-            >
-              {dealerTotal ?? '—'}
-            </div>
-          </div>
+      <div className="w-full relative px-4 py-8 bg-zinc-950/40 border border-zinc-900/80 rounded-2xl mb-8 min-h-[220px]">
+        <div className="grid grid-cols-2 gap-6">
+          <CardHand
+            cards={playerCards}
+            total={playerTotal}
+            label="Player"
+            labelId={playerLabelId}
+            hideAll={isDealing}
+            highlight={playerHighlight as 'win' | 'loss' | null}
+            size="md"
+          />
+          <CardHand
+            cards={dealerCards}
+            total={dealerTotal}
+            label="Dealer"
+            labelId={dealerLabelId}
+            hideAll={isDealing}
+            highlight={dealerHighlight as 'win' | 'loss' | null}
+            size="md"
+          />
         </div>
 
         <div className="mt-4 h-8 flex items-center justify-center">
@@ -242,6 +312,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
       {showRules && (
         <div className="w-full mt-6 rounded-2xl border border-zinc-800/80 bg-zinc-950/30 p-4 text-sm text-zinc-400">
           Deal one hand for player and dealer. Closest to 21 without busting wins.
+          Totals above 21 are a bust.
         </div>
       )}
     </div>

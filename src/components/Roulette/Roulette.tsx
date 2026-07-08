@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useId,
   useCallback,
   useRef,
   useState,
@@ -12,19 +11,31 @@ import { useGameSession } from '../../lib/useGameSession';
 import { useGameTrigger } from '../../lib/useGameTrigger';
 import { StatsHeader } from '../../lib/components/StatsHeader';
 import type {
+  RouletteBet,
   RouletteColor,
   RouletteHandle,
   RouletteProps,
   RouletteSpinResult,
 } from './types';
+import { RouletteWheelVisual } from './components/RouletteWheelVisual';
+import { RouletteBettingBoard } from './components/RouletteBettingBoard';
 
-// Standard single-zero roulette red numbers (used by both European and American tables).
+// Standard single-zero roulette red numbers.
 const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
-const ROULETTE_COLORS: RouletteColor[] = ['red', 'black', 'green'];
 
 function resolveRouletteColor(value: number): RouletteColor {
   if (value === 0) return 'green';
   return RED_NUMBERS.has(value) ? 'red' : 'black';
+}
+
+function isWinForBet(landedNumber: number, landedColor: RouletteColor, bet: RouletteBet): boolean {
+  if (bet.type === 'color') return bet.color === landedColor;
+  return bet.number === landedNumber;
+}
+
+function betLabel(bet: RouletteBet): string {
+  if (bet.type === 'number') return `#${bet.number}`;
+  return bet.color.toUpperCase();
 }
 
 export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roulette(
@@ -34,6 +45,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
     onIsSpinningChange,
     spinRequest,
     initialPrediction = 'red',
+    initialBet,
     initialHistory = [],
     disabled = false,
     className = '',
@@ -46,28 +58,28 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
   ref,
 ) {
   const rng = resolveRng(rngProp);
-  const landedNumberLabelId = useId();
   const trackSession = showHeader || showHistory;
-  const [prediction, setPrediction] = useState<RouletteColor>(initialPrediction);
+
+  // Resolve initial bet from either initialBet or the legacy initialPrediction
+  const resolvedInitialBet: RouletteBet = initialBet ?? {
+    type: 'color',
+    color: initialPrediction,
+  };
+
+  const [activeBet, setActiveBet] = useState<RouletteBet>(resolvedInitialBet);
   const [spinStatus, setSpinStatus] = useState<'idle' | 'win' | 'loss'>('idle');
-  const [displayNumber, setDisplayNumber] = useState<string>('—');
   const [result, setResult] = useState<RouletteSpinResult | null>(null);
   const { stats, history, recordOutcome } = useGameSession<RouletteSpinResult>({
     initialHistory: trackSession ? initialHistory : [],
   });
 
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cycleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const executeRef = useRef<() => void>(() => {});
 
   const clearSpinTimer = useCallback(() => {
     if (spinTimerRef.current !== null) {
       clearTimeout(spinTimerRef.current);
       spinTimerRef.current = null;
-    }
-    if (cycleIntervalRef.current !== null) {
-      clearInterval(cycleIntervalRef.current);
-      cycleIntervalRef.current = null;
     }
   }, []);
 
@@ -89,31 +101,27 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
     setResult(null);
     onSpinStart?.();
 
-    cycleIntervalRef.current = setInterval(() => {
-      setDisplayNumber(String(Math.floor(rng() * 37)));
-    }, 45);
-
     const landedNumber = Math.floor(rng() * 37);
     const landedColor = resolveRouletteColor(landedNumber);
-    const isWin = landedColor === prediction;
+    const isWin = isWinForBet(landedNumber, landedColor, activeBet);
+
+    // prediction field kept for backward compat (colour of landed pocket)
+    const prediction: RouletteColor =
+      activeBet.type === 'color' ? activeBet.color : landedColor;
 
     spinTimerRef.current = setTimeout(() => {
       spinTimerRef.current = null;
-      if (cycleIntervalRef.current !== null) {
-        clearInterval(cycleIntervalRef.current);
-        cycleIntervalRef.current = null;
-      }
 
       const spinResult: RouletteSpinResult = {
         id: createOutcomeId(),
         number: landedNumber,
         color: landedColor,
         prediction,
+        bet: activeBet,
         isWin,
         timestamp: new Date(),
       };
 
-      setDisplayNumber(String(landedNumber));
       setResult(spinResult);
       setSpinStatus(isWin ? 'win' : 'loss');
       setBusy(false);
@@ -125,11 +133,11 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
       onSpinComplete?.(spinResult, isWin);
     }, spinDuration);
   }, [
+    activeBet,
     clearSpinTimer,
     guardExecute,
     onSpinComplete,
     onSpinStart,
-    prediction,
     recordOutcome,
     rng,
     setBusy,
@@ -155,51 +163,32 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
         />
       )}
 
-      <div className="w-full relative px-6 py-10 bg-zinc-950/40 border border-zinc-900/80 rounded-2xl mb-8 flex flex-col items-center justify-center min-h-[220px]">
-        <div className="text-xs text-zinc-500 tracking-widest uppercase font-black" id={landedNumberLabelId}>
-          Landed Number
-        </div>
-        <div
-          className="text-7xl font-black font-mono leading-none mt-2 text-white"
-          role="status"
-          aria-live="polite"
-          aria-labelledby={landedNumberLabelId}
-        >
-          {displayNumber}
-        </div>
-        {result && (
-          <div
-            className={`mt-4 px-4 py-1.5 rounded-full border text-xs font-black uppercase tracking-wider
-              ${result.color === 'red' ? 'bg-red-500/20 border-red-500/50 text-red-400' : ''}
-              ${result.color === 'black' ? 'bg-zinc-700/30 border-zinc-500/50 text-zinc-100' : ''}
-              ${result.color === 'green' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : ''}
-            `}
-          >
-            {result.color}
-          </div>
-        )}
+      {/* Animated roulette wheel with spinning ball */}
+      <RouletteWheelVisual
+        isSpinning={isSpinning}
+        result={result}
+        spinStatus={spinStatus}
+      />
+
+      {/* Screen-reader live region for spin outcome */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {!isSpinning && result
+          ? `Landed ${result.number} (${result.color}). ${result.isWin ? 'Win!' : 'Loss.'}`
+          : isSpinning
+          ? 'Wheel spinning…'
+          : ''}
       </div>
 
-      <div className="w-full flex flex-col gap-6">
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3">
-          {ROULETTE_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              onClick={() => setPrediction(color)}
-              disabled={isSpinning || disabled}
-              aria-label={`Bet ${color}`}
-              aria-disabled={isSpinning || disabled}
-              className={`py-3 rounded-xl text-xs font-black tracking-wider uppercase border transition-all
-                ${prediction === color ? 'border-indigo-400 text-white bg-indigo-500/20' : 'border-zinc-700 text-zinc-400 bg-zinc-900/60 hover:text-zinc-200'}
-                ${isSpinning || disabled ? 'opacity-60 cursor-not-allowed' : ''}
-              `}
-            >
-              Bet {color}
-            </button>
-          ))}
-        </div>
+      <div className="w-full flex flex-col gap-4">
+        {/* Betting board (number grid + colour bets) */}
+        <RouletteBettingBoard
+          bet={activeBet}
+          onBetChange={setActiveBet}
+          disabled={isSpinning || disabled}
+          lastNumber={result?.number ?? null}
+        />
 
+        {/* Spin button */}
         <button
           type="button"
           disabled={isSpinning || disabled}
@@ -212,7 +201,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
             }
           `}
         >
-          {isSpinning ? 'SPINNING...' : `SPIN (${prediction.toUpperCase()})`}
+          {isSpinning ? 'SPINNING...' : `SPIN (${betLabel(activeBet)})`}
         </button>
 
         {showHistory && (
@@ -240,7 +229,8 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
 
       {showRules && (
         <div className="w-full mt-6 rounded-2xl border border-zinc-800/80 bg-zinc-950/30 p-4 text-sm text-zinc-400">
-          Pick a color and spin. 0 is green; all other numbers are red or black. You win when your color matches.
+          Pick a colour or a specific number on the betting board and spin. 0 is green; all
+          other numbers are red or black. You win when your selection matches.
         </div>
       )}
     </div>
