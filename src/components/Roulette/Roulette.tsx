@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useId,
   useCallback,
   useRef,
   useState,
@@ -17,7 +18,9 @@ import type {
   RouletteSpinResult,
 } from './types';
 
+// Standard roulette red numbers (0 resolves to green).
 const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+const ROULETTE_COLORS: RouletteColor[] = ['red', 'black', 'green'];
 
 function resolveRouletteColor(value: number): RouletteColor {
   if (value === 0) return 'green';
@@ -43,6 +46,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
   ref,
 ) {
   const rng = resolveRng(rngProp);
+  const landedNumberLabelId = useId();
   const trackSession = showHeader || showHistory;
   const [prediction, setPrediction] = useState<RouletteColor>(initialPrediction);
   const [spinStatus, setSpinStatus] = useState<'idle' | 'win' | 'loss'>('idle');
@@ -86,7 +90,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
     onSpinStart?.();
 
     cycleIntervalRef.current = setInterval(() => {
-      setDisplayNumber(String(Math.floor(Math.random() * 37)));
+      setDisplayNumber(String(Math.floor(rng() * 37)));
     }, 45);
 
     const landedNumber = Math.floor(rng() * 37);
@@ -152,8 +156,17 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
       )}
 
       <div className="w-full relative px-6 py-10 bg-zinc-950/40 border border-zinc-900/80 rounded-2xl mb-8 flex flex-col items-center justify-center min-h-[220px]">
-        <div className="text-xs text-zinc-500 tracking-widest uppercase font-black">Landed Number</div>
-        <div className="text-7xl font-black font-mono leading-none mt-2 text-white">{displayNumber}</div>
+        <div className="text-xs text-zinc-500 tracking-widest uppercase font-black" id={landedNumberLabelId}>
+          Landed Number
+        </div>
+        <div
+          className="text-7xl font-black font-mono leading-none mt-2 text-white"
+          role="status"
+          aria-live="polite"
+          aria-labelledby={landedNumberLabelId}
+        >
+          {displayNumber}
+        </div>
         {result && (
           <div
             className={`mt-4 px-4 py-1.5 rounded-full border text-xs font-black uppercase tracking-wider
@@ -169,12 +182,14 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
 
       <div className="w-full flex flex-col gap-6">
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3">
-          {(['red', 'black', 'green'] as const).map((color) => (
+          {ROULETTE_COLORS.map((color) => (
             <button
               key={color}
               type="button"
               onClick={() => setPrediction(color)}
               disabled={isSpinning || disabled}
+              aria-label={`Bet ${color}`}
+              aria-disabled={isSpinning || disabled}
               className={`py-3 rounded-xl text-xs font-black tracking-wider uppercase border transition-all
                 ${prediction === color ? 'border-indigo-400 text-white bg-indigo-500/20' : 'border-zinc-700 text-zinc-400 bg-zinc-900/60 hover:text-zinc-200'}
                 ${isSpinning || disabled ? 'opacity-60 cursor-not-allowed' : ''}

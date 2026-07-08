@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useId,
   useCallback,
   useRef,
   useState,
@@ -16,8 +17,12 @@ import type {
   TwentyOneResult,
 } from './types';
 
+const MIN_TOTAL = 4;
+const MAX_TOTAL = 27;
+
 function drawTotal(rng: () => number): number {
-  return Math.floor(rng() * 24) + 4;
+  // Arcade-style total generation where values above 21 are intentional busts.
+  return Math.floor(rng() * (MAX_TOTAL - MIN_TOTAL + 1)) + MIN_TOTAL;
 }
 
 export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function TwentyOne(
@@ -38,6 +43,8 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
   ref,
 ) {
   const rng = resolveRng(rngProp);
+  const playerLabelId = useId();
+  const dealerLabelId = useId();
   const trackSession = showHeader || showHistory;
   const [dealStatus, setDealStatus] = useState<'idle' | 'win' | 'loss'>('idle');
   const [playerTotal, setPlayerTotal] = useState<number | null>(null);
@@ -81,14 +88,14 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
     const nextPlayerTotal = drawTotal(rng);
     let nextDealerTotal = drawTotal(rng);
     if (nextDealerTotal === nextPlayerTotal) {
-      nextDealerTotal = Math.min(27, nextDealerTotal + 1);
+      nextDealerTotal = Math.min(MAX_TOTAL, nextDealerTotal + 1);
     }
 
     const isWin = nextPlayerTotal <= 21 && (nextDealerTotal > 21 || nextPlayerTotal > nextDealerTotal);
 
     cycleIntervalRef.current = setInterval(() => {
-      setPlayerTotal(Math.floor(Math.random() * 24) + 4);
-      setDealerTotal(Math.floor(Math.random() * 24) + 4);
+      setPlayerTotal(drawTotal(rng));
+      setDealerTotal(drawTotal(rng));
     }, 50);
 
     dealTimerRef.current = setTimeout(() => {
@@ -150,12 +157,30 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
       <div className="w-full relative px-6 py-10 bg-zinc-950/40 border border-zinc-900/80 rounded-2xl mb-8 min-h-[220px]">
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center">
-            <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider">Player</div>
-            <div className="text-5xl font-black font-mono mt-2 text-white">{playerTotal ?? '—'}</div>
+            <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider" id={playerLabelId}>
+              Player
+            </div>
+            <div
+              className="text-5xl font-black font-mono mt-2 text-white"
+              role="status"
+              aria-live="polite"
+              aria-labelledby={playerLabelId}
+            >
+              {playerTotal ?? '—'}
+            </div>
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center">
-            <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider">Dealer</div>
-            <div className="text-5xl font-black font-mono mt-2 text-white">{dealerTotal ?? '—'}</div>
+            <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider" id={dealerLabelId}>
+              Dealer
+            </div>
+            <div
+              className="text-5xl font-black font-mono mt-2 text-white"
+              role="status"
+              aria-live="polite"
+              aria-labelledby={dealerLabelId}
+            >
+              {dealerTotal ?? '—'}
+            </div>
           </div>
         </div>
 

@@ -7,8 +7,10 @@ import { Roulette } from './components/Roulette/Roulette';
 import { TwentyOne } from './components/TwentyOne/TwentyOne';
 import { ShieldCheck, Flame, Activity, Coins, Dices } from 'lucide-react';
 
+type ActiveTab = 'dice' | 'coin' | 'wheel' | 'd20' | 'roulette' | 'twentyOne';
+
 function App() {
-  const [activeTab, setActiveTab] = useState<'dice' | 'coin' | 'wheel' | 'd20' | 'roulette' | 'twentyOne'>('dice');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('dice');
 
 
   return (
