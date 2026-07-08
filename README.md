@@ -118,6 +118,26 @@ A suspenseful spinning wheel component showcasing a wiggly pointer, real-time cy
 | `spinDuration` | `number` | `1500` | Spin animation duration in milliseconds. |
 | `initialWinChance` | `number` | `10.00` | Initial win chance percentage. |
 
+### 🎯 Roulette
+
+Color-based roulette console with red/black/green predictions, animated spins, optional stats header, history, and rules.
+
+```tsx
+import { Roulette } from '@itme.day/rng-react-components';
+
+<Roulette showHeader showHistory showRules />
+```
+
+### 🃏 21
+
+Quick blackjack-style 21 console that deals player/dealer totals and tracks wins/losses with optional header, history, and rules.
+
+```tsx
+import { TwentyOne } from '@itme.day/rng-react-components';
+
+<TwentyOne showHeader showHistory showRules />
+```
+
 ---
 
 ## Storybook

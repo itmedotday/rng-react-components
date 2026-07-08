@@ -3,10 +3,14 @@ import { DiceSlider } from './components/DiceSlider/DiceSlider';
 import { CoinFlipConsole } from './components/CoinFlip/CoinFlipConsole';
 import { RngWheel } from './components/RngWheel/RngWheel';
 import { D20RollConsole } from './components/D20Roll/D20RollConsole';
+import { Roulette } from './components/Roulette/Roulette';
+import { TwentyOne } from './components/TwentyOne/TwentyOne';
 import { ShieldCheck, Flame, Activity, Coins, Dices } from 'lucide-react';
 
+type ActiveTab = 'dice' | 'coin' | 'wheel' | 'd20' | 'roulette' | 'twentyOne';
+
 function App() {
-  const [activeTab, setActiveTab] = useState<'dice' | 'coin' | 'wheel' | 'd20'>('dice');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('dice');
 
 
   return (
@@ -86,6 +90,30 @@ function App() {
             <Dices className="w-3.5 h-3.5 text-violet-400" />
             D20 Roll
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('roulette')}
+            className={`flex-1 min-w-[7rem] py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer
+              ${activeTab === 'roulette'
+                ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_10px_rgba(99,102,241,0.2)]'
+                : 'text-zinc-500 hover:text-zinc-400'
+              }
+            `}
+          >
+            Roulette
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('twentyOne')}
+            className={`flex-1 min-w-[7rem] py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer
+              ${activeTab === 'twentyOne'
+                ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_10px_rgba(99,102,241,0.2)]'
+                : 'text-zinc-500 hover:text-zinc-400'
+              }
+            `}
+          >
+            21
+          </button>
         </div>
 
         {/* Dynamic Game Component Rendering */}
@@ -100,6 +128,12 @@ function App() {
         )}
         {activeTab === 'd20' && (
           <D20RollConsole showHeader showHistory showRules />
+        )}
+        {activeTab === 'roulette' && (
+          <Roulette showHeader showHistory showRules />
+        )}
+        {activeTab === 'twentyOne' && (
+          <TwentyOne showHeader showHistory showRules />
         )}
       </main>
 
