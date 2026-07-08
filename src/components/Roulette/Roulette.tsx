@@ -170,6 +170,15 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
         spinStatus={spinStatus}
       />
 
+      {/* Screen-reader live region for spin outcome */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {!isSpinning && result
+          ? `Landed ${result.number} (${result.color}). ${result.isWin ? 'Win!' : 'Loss.'}`
+          : isSpinning
+          ? 'Wheel spinning…'
+          : ''}
+      </div>
+
       <div className="w-full flex flex-col gap-4">
         {/* Betting board (number grid + colour bets) */}
         <RouletteBettingBoard

@@ -150,7 +150,6 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
     clearDealTimer();
     setBusy(true);
     setDealStatus('idle');
-    setIsRevealed(false);
     onDealStart?.();
 
     const nextPlayerTotal = drawTotal(rng);

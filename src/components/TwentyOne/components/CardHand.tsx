@@ -47,7 +47,7 @@ export const CardHand: React.FC<CardHandProps> = ({
       {/* Card spread */}
       <div className="relative flex justify-center min-h-[80px]">
         {cards.length === 0 ? (
-          /* Placeholder placeholders when no cards dealt yet */
+          /* Placeholder when no cards dealt yet */
           <div className="flex gap-1.5">
             {[0, 1].map((i) => (
               <div
