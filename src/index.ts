@@ -92,14 +92,26 @@ export type {
   RouletteProps,
   RouletteSpinResult,
   RouletteColor,
+  RouletteBet,
 } from './components/Roulette/types';
+export { RouletteWheelVisual } from './components/Roulette/components/RouletteWheelVisual';
+export type { RouletteWheelVisualProps } from './components/Roulette/components/RouletteWheelVisual';
+export { RouletteBettingBoard } from './components/Roulette/components/RouletteBettingBoard';
+export type { RouletteBettingBoardProps } from './components/Roulette/components/RouletteBettingBoard';
 
 export { TwentyOne } from './components/TwentyOne/TwentyOne';
 export type {
   TwentyOneHandle,
   TwentyOneProps,
   TwentyOneResult,
+  Card,
+  CardRank,
+  CardSuit,
 } from './components/TwentyOne/types';
+export { PlayingCard } from './components/TwentyOne/components/PlayingCard';
+export type { PlayingCardProps } from './components/TwentyOne/components/PlayingCard';
+export { CardHand } from './components/TwentyOne/components/CardHand';
+export type { CardHandProps } from './components/TwentyOne/components/CardHand';
 
 export {
   buildStatsFromHistory,
