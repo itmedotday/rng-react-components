@@ -86,6 +86,21 @@ export { D20RollHistory } from './components/D20Roll/components/D20RollHistory';
 export type { D20RollHistoryProps } from './components/D20Roll/components/D20RollHistory';
 export { D20RollRules } from './components/D20Roll/components/D20RollRules';
 
+export { Roulette } from './components/Roulette/Roulette';
+export type {
+  RouletteHandle,
+  RouletteProps,
+  RouletteSpinResult,
+  RouletteColor,
+} from './components/Roulette/types';
+
+export { TwentyOne } from './components/TwentyOne/TwentyOne';
+export type {
+  TwentyOneHandle,
+  TwentyOneProps,
+  TwentyOneResult,
+} from './components/TwentyOne/types';
+
 export {
   buildStatsFromHistory,
   computeWinRatio,
