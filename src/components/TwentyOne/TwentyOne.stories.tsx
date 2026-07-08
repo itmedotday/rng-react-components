@@ -1,6 +1,8 @@
+import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within, waitFor } from 'storybook/test';
 import { TwentyOne } from './TwentyOne';
+import type { TwentyOneHandle } from './types';
 
 const meta: Meta<typeof TwentyOne> = {
   title: 'Components/TwentyOne',
@@ -13,13 +15,18 @@ const meta: Meta<typeof TwentyOne> = {
     },
   },
   tags: ['autodocs'],
+  argTypes: {
+    onDealStart: { action: 'deal started' },
+    onDealComplete: { action: 'deal completed' },
+    onIsDealingChange: { action: 'is dealing changed' },
+    dealRequest: { control: 'number' },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof TwentyOne>;
 
 export const Default: Story = {
-  args: {},
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: /deal 21/i })).toBeInTheDocument();
@@ -36,12 +43,99 @@ export const FullConsole: Story = {
 
 export const DealSimulation: Story = {
   args: { showHistory: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const dealButton = canvas.getByRole('button', { name: /deal 21/i });
-    await userEvent.click(dealButton);
-    await waitFor(async () => {
-      await expect(canvas.getByRole('button', { name: /deal 21/i })).toBeInTheDocument();
-    }, { timeout: 2000 });
+
+    await step('Clicking deal triggers deal animation', async () => {
+      await userEvent.click(dealButton);
+      await expect(dealButton).toBeDisabled();
+      await waitFor(
+        async () => {
+          await expect(dealButton).not.toBeDisabled();
+        },
+        { timeout: 2000 },
+      );
+    });
+  },
+};
+
+export const Disabled: Story = {
+  args: { disabled: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: /deal 21/i })).toBeDisabled();
+  },
+};
+
+export const FastDeal: Story = {
+  args: { dealDuration: 200 },
+};
+
+function ExternalDealRequestDemo() {
+  const [dealRequest, setDealRequest] = useState(0);
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <button
+        type="button"
+        className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wide"
+        onClick={() => setDealRequest((n) => n + 1)}
+      >
+        Deal from parent
+      </button>
+      <TwentyOne dealRequest={dealRequest} />
+    </div>
+  );
+}
+
+export const ExternalDealRequest: Story = {
+  render: () => <ExternalDealRequestDemo />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const dealButton = canvas.getByRole('button', { name: /^deal 21$/i });
+    await step('Parent dealRequest triggers deal', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: /deal from parent/i }));
+      await expect(dealButton).toBeDisabled();
+      await waitFor(
+        async () => {
+          await expect(dealButton).not.toBeDisabled();
+        },
+        { timeout: 2000 },
+      );
+    });
+  },
+};
+
+function ImperativeDealDemo() {
+  const twentyOneRef = useRef<TwentyOneHandle>(null);
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <button
+        type="button"
+        className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wide"
+        onClick={() => twentyOneRef.current?.deal()}
+      >
+        Deal via ref
+      </button>
+      <TwentyOne ref={twentyOneRef} />
+    </div>
+  );
+}
+
+export const ImperativeDeal: Story = {
+  render: () => <ImperativeDealDemo />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const dealButton = canvas.getByRole('button', { name: /^deal 21$/i });
+    await step('ref.deal() triggers deal', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: /deal via ref/i }));
+      await expect(dealButton).toBeDisabled();
+      await waitFor(
+        async () => {
+          await expect(dealButton).not.toBeDisabled();
+        },
+        { timeout: 2000 },
+      );
+    });
   },
 };
