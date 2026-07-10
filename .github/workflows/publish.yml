@@ -1,9 +1,8 @@
 name: Publish
 
 on:
-  # Disabled during history migration; re-enable before the next release (v0.1.4+).
-  # release:
-  #   types: [published]
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
