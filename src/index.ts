@@ -113,6 +113,31 @@ export type { PlayingCardProps } from './components/TwentyOne/components/Playing
 export { CardHand } from './components/TwentyOne/components/CardHand';
 export type { CardHandProps } from './components/TwentyOne/components/CardHand';
 
+export { TextFx } from './components/TextFx/TextFx';
+export { TextFxConsole } from './components/TextFx/TextFxConsole';
+export type {
+  TextFxProps,
+  TextFxConsoleProps,
+  FxColorId,
+  FxColorDef,
+  FxEffectId,
+  FxSpec,
+  FxPreviewProps,
+  FxCodeTagProps,
+  FxChipRowProps,
+} from './components/TextFx/types';
+export {
+  buildFxTag,
+  FX_COLORS,
+  FX_DEFAULT_GLOW,
+  FX_EFFECTS,
+  FX_EFFECT_IDS,
+  SUGGESTED_FONT_STACK,
+} from './components/TextFx/types';
+export { FxPreview } from './components/TextFx/components/FxPreview';
+export { FxCodeTag } from './components/TextFx/components/FxCodeTag';
+export { FxChipRow } from './components/TextFx/components/FxChipRow';
+
 export {
   buildStatsFromHistory,
   computeWinRatio,

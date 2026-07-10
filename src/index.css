@@ -68,3 +68,181 @@ body {
     radial-gradient(at 100% 100%, rgba(225, 29, 72, 0.05) 0px, transparent 50%);
   background-attachment: fixed;
 }
+
+
+/* ---------------------------------------------------------------------------
+ * Text FX keyframes.
+ *
+ * Authored as raw top-level @keyframes rather than Tailwind v4 @theme
+ * --animate-* tokens: those only generate fixed-timing utility classes, and
+ * these animations are applied per character via inline `animation` shorthand
+ * with an index-derived stagger delay. fxGlow additionally reads a runtime
+ * --glow custom property set inline by <FxPreview />.
+ * ------------------------------------------------------------------------- */
+@keyframes fxWave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes fxWave2 {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-13px);
+  }
+}
+
+@keyframes fxWave3 {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-9px) rotate(-14deg);
+  }
+}
+
+@keyframes fxShake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(1.5px, -1.5px);
+  }
+  50% {
+    transform: translate(-1.5px, 1px);
+  }
+  75% {
+    transform: translate(1px, 1.5px);
+  }
+}
+
+@keyframes fxShake2 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(3px, -2px);
+  }
+  40% {
+    transform: translate(-3px, 2px);
+  }
+  60% {
+    transform: translate(2px, 3px);
+  }
+  80% {
+    transform: translate(-2px, -3px);
+  }
+}
+
+@keyframes fxRainbow {
+  0% {
+    color: #e34b4b;
+  }
+  16% {
+    color: #ee8d2c;
+  }
+  33% {
+    color: #ecc24e;
+  }
+  50% {
+    color: #46a832;
+  }
+  66% {
+    color: #46c8d2;
+  }
+  83% {
+    color: #3f6fd6;
+  }
+  100% {
+    color: #b455c8;
+  }
+}
+
+@keyframes fxGlow {
+  0%,
+  100% {
+    text-shadow: 0 0 2px var(--glow);
+  }
+  50% {
+    text-shadow:
+      0 0 14px var(--glow),
+      0 0 24px var(--glow);
+  }
+}
+
+@keyframes fxFlash {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.18;
+  }
+}
+
+@keyframes fxScrollL {
+  0% {
+    transform: translateX(105%);
+  }
+  100% {
+    transform: translateX(-105%);
+  }
+}
+
+@keyframes fxScrollR {
+  0% {
+    transform: translateX(-105%);
+  }
+  100% {
+    transform: translateX(105%);
+  }
+}
+
+@keyframes fxSlideD {
+  0% {
+    transform: translateY(-130%);
+  }
+  42%,
+  58% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(130%);
+  }
+}
+
+@keyframes fxSlideU {
+  0% {
+    transform: translateY(130%);
+  }
+  42%,
+  58% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-130%);
+  }
+}
+
+/* Backdrop panel behind the animated preview text. */
+@utility fx-stage {
+  background-color: #09090b;
+  background-image:
+    radial-gradient(at 50% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(225, 29, 72, 0.05) 0px, transparent 50%);
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
