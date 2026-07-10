@@ -138,6 +138,35 @@ import { TwentyOne } from '@itme.day/rng-react-components';
 <TwentyOne showHeader showHistory showRules />
 ```
 
+### ✨ TextFx
+
+RuneScape-style chat text renderer: 13 colours (including `rainbow` and `inverted`) × 13 effects (waves, shakes, glow, flash, scroll, slide, mirror), with a copyable `effect:colour:text` tag.
+
+`TextFx` is the minimal picker; `TextFxConsole` wraps it in a glass panel with an optional header.
+
+```tsx
+import { TextFx, TextFxConsole } from '@itme.day/rng-react-components';
+
+// minimal
+<TextFx defaultValue="Nat 20!" defaultColor="rainbow" defaultEffect="wave" />
+
+// with a header, and controlled
+<TextFxConsole
+  showHeader
+  value={message}
+  onChange={setMessage}
+  onCopy={(tag) => console.log(tag)} // "wave:rainbow:Nat 20!"
+/>
+```
+
+`value`, `color`, and `effect` are each independently controlled or uncontrolled.
+
+**Fonts.** No font ships with this package, so the preview inherits the surrounding font by default. The effect is designed for a pixel/bitmap face — self-host one and pass it in:
+
+```tsx
+<TextFx fontFamily="'Press Start 2P', ui-monospace, monospace" />
+```
+
 ---
 
 ## Storybook
