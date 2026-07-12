@@ -101,12 +101,14 @@ export const HitThenStand: Story = {
     });
 
     await step('Decline insurance if offered', async () => {
+      // The deal animates in, so wait for an *enabled* action (buttons render
+      // disabled while phase is 'dealing'), an insurance prompt, or a settled round.
       await waitFor(
         () => {
           const hit = canvas.queryByRole('button', { name: /^hit$/i });
           const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
           const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-          expect(hit || noIns || status).toBeTruthy();
+          expect((hit && !hit.hasAttribute('disabled')) || noIns || status).toBeTruthy();
         },
         { timeout: 4000 },
       );
@@ -119,7 +121,7 @@ export const HitThenStand: Story = {
         () => {
           const hit = canvas.queryByRole('button', { name: /^hit$/i });
           const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-          expect(hit || status).toBeTruthy();
+          expect((hit && !hit.hasAttribute('disabled')) || status).toBeTruthy();
         },
         { timeout: 4000 },
       );
@@ -129,6 +131,14 @@ export const HitThenStand: Story = {
         await userEvent.click(hit);
       }
 
+      await waitFor(
+        () => {
+          const stand = canvas.queryByRole('button', { name: /^stand$/i });
+          const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+          expect((stand && !stand.hasAttribute('disabled')) || status).toBeTruthy();
+        },
+        { timeout: 4000 },
+      );
       const stand = canvas.queryByRole('button', { name: /^stand$/i });
       if (stand && !stand.hasAttribute('disabled')) {
         await userEvent.click(stand);
@@ -154,12 +164,14 @@ export const DoubleWhenAvailable: Story = {
     });
 
     await step('Clear insurance gate if present', async () => {
+      // Buttons render disabled during the deal animation, so require an
+      // *enabled* action, an insurance prompt, or a settled round.
       await waitFor(
         () => {
           const double = canvas.queryByRole('button', { name: /^double$/i });
           const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
           const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-          expect(double || noIns || status).toBeTruthy();
+          expect((double && !double.hasAttribute('disabled')) || noIns || status).toBeTruthy();
         },
         { timeout: 4000 },
       );
@@ -173,7 +185,11 @@ export const DoubleWhenAvailable: Story = {
           const double = canvas.queryByRole('button', { name: /^double$/i });
           const stand = canvas.queryByRole('button', { name: /^stand$/i });
           const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-          expect(double || stand || status).toBeTruthy();
+          expect(
+            (double && !double.hasAttribute('disabled')) ||
+              (stand && !stand.hasAttribute('disabled')) ||
+              status,
+          ).toBeTruthy();
         },
         { timeout: 4000 },
       );
