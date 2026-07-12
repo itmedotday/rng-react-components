@@ -123,6 +123,9 @@ export type {
   TwentyOneHandle,
   TwentyOneProps,
   TwentyOneResult,
+  TwentyOnePhase,
+  HandOutcome,
+  HandValue,
   Card,
   CardRank,
   CardSuit,
@@ -131,6 +134,23 @@ export { PlayingCard } from './components/TwentyOne/components/PlayingCard';
 export type { PlayingCardProps } from './components/TwentyOne/components/PlayingCard';
 export { CardHand } from './components/TwentyOne/components/CardHand';
 export type { CardHandProps } from './components/TwentyOne/components/CardHand';
+export { ActionPad } from './components/TwentyOne/components/ActionPad';
+export type { ActionPadProps } from './components/TwentyOne/components/ActionPad';
+export { BetBar } from './components/TwentyOne/components/BetBar';
+export type { BetBarProps } from './components/TwentyOne/components/BetBar';
+export {
+  createShoe,
+  shuffleShoe,
+  handValue,
+  formatHandTotals,
+  settleMainHand,
+  settleInsurance,
+  dealerShouldHit,
+  playDealer,
+  isPair,
+  isBlackjack,
+  insuranceCost,
+} from './components/TwentyOne/blackjack';
 
 export { TextFx } from './components/TextFx/TextFx';
 export { TextFxConsole } from './components/TextFx/TextFxConsole';

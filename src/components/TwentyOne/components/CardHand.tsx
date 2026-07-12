@@ -1,95 +1,112 @@
 import React from 'react';
 import type { Card } from '../types';
+import { formatHandTotals, handValue } from '../blackjack';
 import { PlayingCard } from './PlayingCard';
 
 export interface CardHandProps {
-  /** Cards to display. Pass an empty array for the "idle" (no cards) state. */
   cards: Card[];
-  /** Calculated hand total. Displayed as a badge when provided. */
-  total: number | null;
-  /** Label shown above the hand (e.g. "Player", "Dealer"). */
-  label: string;
-  /** Aria id for the total element. */
-  labelId: string;
-  /** When true, all cards except the first are shown face-down. */
-  hideAll?: boolean;
-  /** Bust / win highlight for the total badge. */
+  label?: string;
+  labelId?: string;
+  /** Indices of face-down cards (e.g. dealer hole). */
+  hiddenIndices?: number[];
+  /** Hide total badge (e.g. while hole card hidden and no upcard total desired). */
+  showTotal?: boolean;
+  /** Override displayed total string. */
+  totalOverride?: string | null;
+  playerActive?: boolean;
   highlight?: 'win' | 'loss' | 'bust' | null;
-  /** Card visual size. */
   size?: 'sm' | 'md' | 'lg';
+  /** Score pill tone: dealer = dark, player = red when active. */
+  pillTone?: 'dealer' | 'player' | 'neutral';
 }
 
 export const CardHand: React.FC<CardHandProps> = ({
   cards,
-  total,
   label,
   labelId,
-  hideAll = false,
+  hiddenIndices = [],
+  showTotal = true,
+  totalOverride = null,
+  playerActive = false,
   highlight = null,
-  size = 'md',
+  size = 'lg',
+  pillTone = 'neutral',
 }) => {
-  const isBust = total !== null && total > 21;
+  const visibleCards = cards.filter((_, i) => !hiddenIndices.includes(i));
+  const value = handValue(visibleCards.length > 0 ? visibleCards : cards);
+  const isBust = highlight === 'bust' || (showTotal && value.isBust && hiddenIndices.length === 0);
+  const totalText =
+    totalOverride ??
+    (showTotal && cards.length > 0 && (hiddenIndices.length === 0 || visibleCards.length > 0)
+      ? formatHandTotals(handValue(hiddenIndices.length ? visibleCards : cards))
+      : null);
 
-  const badgeCls =
-    highlight === 'win'
-      ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
-      : highlight === 'loss' || highlight === 'bust'
-      ? 'bg-rose-500/20 border-rose-500/50 text-rose-400'
-      : 'bg-zinc-800/60 border-zinc-700/50 text-zinc-300';
+  const pillCls =
+    pillTone === 'player' || highlight === 'bust'
+      ? 'bg-rose-600 text-white border-rose-500'
+      : highlight === 'win'
+        ? 'bg-emerald-600 text-white border-emerald-500'
+        : highlight === 'loss'
+          ? 'bg-zinc-700 text-zinc-200 border-zinc-600'
+          : 'bg-zinc-800/90 text-white border-zinc-700';
+
+  const overlap = size === 'lg' ? -28 : size === 'md' ? -20 : -14;
 
   return (
     <div className="flex flex-col items-center gap-2 min-w-0">
-      {/* Label */}
-      <div className="text-[11px] text-zinc-500 font-black uppercase tracking-wider" id={labelId}>
-        {label}
-      </div>
+      {label && (
+        <div
+          className="text-[11px] text-zinc-500 font-black uppercase tracking-wider"
+          id={labelId}
+        >
+          {label}
+        </div>
+      )}
 
-      {/* Card spread */}
-      <div className="relative flex justify-center min-h-[80px]">
+      {totalText !== null && (
+        <div
+          className={`px-3 py-1 rounded-full border text-sm font-black font-mono tracking-tight shadow-md ${pillCls}`}
+          role="status"
+          aria-live="polite"
+          aria-labelledby={labelId}
+        >
+          {totalText}
+          {isBust && (
+            <span className="ml-1 text-[10px] uppercase tracking-widest opacity-90">Bust</span>
+          )}
+        </div>
+      )}
+
+      <div className="relative flex justify-center items-end min-h-[6.5rem] px-2">
         {cards.length === 0 ? (
-          /* Placeholder when no cards dealt yet */
-          <div className="flex gap-1.5">
+          <div className="flex" style={{ gap: 8 }}>
             {[0, 1].map((i) => (
               <div
                 key={i}
-                className="w-14 h-20 rounded-lg border border-dashed border-zinc-700/40 bg-zinc-900/30"
+                className="w-[4.5rem] h-[6.25rem] rounded-lg border border-dashed border-zinc-700/50 bg-zinc-900/20"
               />
             ))}
           </div>
         ) : (
-          <div className="flex gap-1.5 flex-wrap justify-center">
-            {cards.map((card, i) => (
-              <PlayingCard
-                key={i}
-                rank={card.rank}
-                suit={card.suit}
-                faceDown={hideAll}
-                size={size}
-                highlight={highlight === 'win' ? 'win' : isBust ? 'bust' : null}
-              />
+          <div className="flex items-end">
+            {cards.map((c, i) => (
+              <div
+                key={`${c.rank}${c.suit}-${i}`}
+                style={{ marginLeft: i === 0 ? 0 : overlap, zIndex: i }}
+              >
+                <PlayingCard
+                  rank={c.rank}
+                  suit={c.suit}
+                  faceDown={hiddenIndices.includes(i)}
+                  size={size}
+                  playerActive={playerActive && !hiddenIndices.includes(i)}
+                  highlight={
+                    highlight === 'win' ? 'win' : isBust && !hiddenIndices.includes(i) ? 'bust' : null
+                  }
+                />
+              </div>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Total badge */}
-      <div
-        className={`px-3 py-1 rounded-full border text-sm font-black font-mono tracking-tight
-          ${total !== null ? badgeCls : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-600'}
-        `}
-        role="status"
-        aria-live="polite"
-        aria-labelledby={labelId}
-      >
-        {total !== null ? (
-          <>
-            {total}
-            {isBust && (
-              <span className="ml-1 text-[10px] uppercase tracking-widest text-rose-300">Bust</span>
-            )}
-          </>
-        ) : (
-          '—'
         )}
       </div>
     </div>

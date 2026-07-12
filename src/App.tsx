@@ -5,7 +5,7 @@ import { RngWheel } from './components/RngWheel/RngWheel';
 import { D20RollConsole } from './components/D20Roll/D20RollConsole';
 import { Roulette } from './components/Roulette/Roulette';
 import { TwentyOne } from './components/TwentyOne/TwentyOne';
-import { ShieldCheck, Flame, Activity, Coins, Dices } from 'lucide-react';
+import { ShieldCheck, Flame, Activity, Coins, Dices, BadgeCent } from 'lucide-react';
 
 type ActiveTab = 'dice' | 'coin' | 'wheel' | 'd20' | 'roulette' | 'twentyOne';
 
@@ -112,6 +112,7 @@ function App() {
               }
             `}
           >
+            <BadgeCent className="w-3.5 h-3.5 text-emerald-400" />
             21
           </button>
         </div>

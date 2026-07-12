@@ -29,7 +29,7 @@ type Story = StoryObj<typeof TwentyOne>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: /deal 21/i })).toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: /^bet$/i })).toBeInTheDocument();
   },
 };
 
@@ -41,21 +41,26 @@ export const FullConsole: Story = {
   },
 };
 
-export const DealSimulation: Story = {
-  args: { showHistory: true },
+export const BetAndActions: Story = {
+  args: { showHistory: true, initialBalance: 500, initialBet: 25 },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const dealButton = canvas.getByRole('button', { name: /deal 21/i });
+    const betButton = canvas.getByRole('button', { name: /^bet$/i });
 
-    await step('Clicking deal triggers deal animation', async () => {
-      await userEvent.click(dealButton);
-      await expect(dealButton).toBeDisabled();
-      await waitFor(
-        async () => {
-          await expect(dealButton).not.toBeDisabled();
-        },
-        { timeout: 2000 },
-      );
+    await step('Placing a bet starts a hand', async () => {
+      await userEvent.click(betButton);
+      await waitFor(() => {
+        expect(betButton).toBeDisabled();
+      });
+    });
+
+    await step('Action pad or insurance or settle appears', async () => {
+      await waitFor(() => {
+        const hit = canvas.queryByRole('button', { name: /^hit$/i });
+        const insurance = canvas.queryByRole('button', { name: /^insurance$/i });
+        const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+        expect(hit || insurance || status).toBeTruthy();
+      });
     });
   },
 };
@@ -64,12 +69,8 @@ export const Disabled: Story = {
   args: { disabled: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: /deal 21/i })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: /^bet$/i })).toBeDisabled();
   },
-};
-
-export const FastDeal: Story = {
-  args: { dealDuration: 200 },
 };
 
 function ExternalDealRequestDemo() {
@@ -92,16 +93,12 @@ export const ExternalDealRequest: Story = {
   render: () => <ExternalDealRequestDemo />,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const dealButton = canvas.getByRole('button', { name: /^deal 21$/i });
+    const betButton = canvas.getByRole('button', { name: /^bet$/i });
     await step('Parent dealRequest triggers deal', async () => {
       await userEvent.click(canvas.getByRole('button', { name: /deal from parent/i }));
-      await expect(dealButton).toBeDisabled();
-      await waitFor(
-        async () => {
-          await expect(dealButton).not.toBeDisabled();
-        },
-        { timeout: 2000 },
-      );
+      await waitFor(() => {
+        expect(betButton).toBeDisabled();
+      });
     });
   },
 };
@@ -126,16 +123,12 @@ export const ImperativeDeal: Story = {
   render: () => <ImperativeDealDemo />,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const dealButton = canvas.getByRole('button', { name: /^deal 21$/i });
+    const betButton = canvas.getByRole('button', { name: /^bet$/i });
     await step('ref.deal() triggers deal', async () => {
       await userEvent.click(canvas.getByRole('button', { name: /deal via ref/i }));
-      await expect(dealButton).toBeDisabled();
-      await waitFor(
-        async () => {
-          await expect(dealButton).not.toBeDisabled();
-        },
-        { timeout: 2000 },
-      );
+      await waitFor(() => {
+        expect(betButton).toBeDisabled();
+      });
     });
   },
 };
