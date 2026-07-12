@@ -93,7 +93,7 @@ export const MultiChipSpin: Story = {
         async () => {
           await expect(playButton).toHaveTextContent(/^play$/i);
         },
-        { timeout: 2800 },
+        { timeout: 4000 },
       );
     });
   },
@@ -187,7 +187,7 @@ export const ExternalSpinRequest: Story = {
         async () => {
           await expect(playButton).toHaveTextContent(/^play$/i);
         },
-        { timeout: 2800 },
+        { timeout: 4000 },
       );
     });
   },
@@ -221,7 +221,7 @@ export const ImperativeSpin: Story = {
         async () => {
           await expect(playButton).toHaveTextContent(/^play$/i);
         },
-        { timeout: 2800 },
+        { timeout: 4000 },
       );
     });
   },

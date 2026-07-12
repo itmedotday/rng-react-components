@@ -46,23 +46,29 @@ type Story = StoryObj<typeof RouletteWheelVisual>;
 export const IdleWithBall: Story = {
   args: {
     isSpinning: false,
+    targetNumber: null,
     result: null,
     spinStatus: 'idle',
+    spinDuration: 2400,
   },
 };
 
 export const Spinning: Story = {
   args: {
     isSpinning: true,
+    targetNumber: 17,
     result: null,
     spinStatus: 'idle',
+    spinDuration: 4000,
   },
 };
 
 export const LandedWin: Story = {
   args: {
     isSpinning: false,
+    targetNumber: null,
     spinStatus: 'win',
+    spinDuration: 2400,
     result: makeResult({
       number: 17,
       color: 'black',
@@ -75,7 +81,9 @@ export const LandedWin: Story = {
 export const LandedLoss: Story = {
   args: {
     isSpinning: false,
+    targetNumber: null,
     spinStatus: 'loss',
+    spinDuration: 2400,
     result: makeResult({
       number: 0,
       color: 'green',
@@ -88,7 +96,9 @@ export const LandedLoss: Story = {
 export const LandedRed: Story = {
   args: {
     isSpinning: false,
+    targetNumber: null,
     spinStatus: 'win',
+    spinDuration: 2400,
     result: makeResult({
       number: 32,
       color: 'red',

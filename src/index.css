@@ -246,3 +246,99 @@ body {
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
+
+/* ---------------------------------------------------------------------------
+ * Roulette motion
+ * ------------------------------------------------------------------------- */
+
+@keyframes rouletteChipPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rouletteOutcomeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rouletteGlowSpin {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes rouletteLandedPulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes roulettePlayReady {
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(0, 231, 1, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(0, 231, 1, 0.4);
+  }
+}
+
+.roulette-chip-pop {
+  animation: rouletteChipPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.roulette-outcome-in {
+  animation: rouletteOutcomeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.roulette-glow-spin {
+  animation: rouletteGlowSpin 1.4s ease-in-out infinite;
+}
+
+.roulette-landed-pulse {
+  animation: rouletteLandedPulse 1.2s ease-in-out infinite;
+}
+
+.roulette-play-ready {
+  animation: roulettePlayReady 1.8s ease-in-out infinite;
+}
+
+.roulette-play-busy {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roulette-chip-pop,
+  .roulette-outcome-in,
+  .roulette-glow-spin,
+  .roulette-landed-pulse,
+  .roulette-play-ready {
+    animation: none !important;
+  }
+}

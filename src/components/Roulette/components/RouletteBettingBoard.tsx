@@ -15,7 +15,8 @@ function numberColor(n: number): 'red' | 'black' | 'green' {
 function ChipMarker({ amount }: { amount: number }) {
   return (
     <span
-      className="pointer-events-none absolute inset-0 m-auto flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-white/80 bg-rose-600 text-[8px] sm:text-[9px] font-black text-white shadow-[0_1px_4px_rgba(0,0,0,0.6)] ring-1 ring-rose-900/80"
+      key={amount}
+      className="pointer-events-none absolute inset-0 m-auto flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-white/85 bg-gradient-to-b from-rose-400 to-rose-700 text-[8px] sm:text-[9px] font-black text-white shadow-[0_2px_6px_rgba(0,0,0,0.55)] ring-1 ring-rose-950/70 roulette-chip-pop"
       aria-hidden="true"
     >
       {formatChipAmount(amount)}
@@ -48,22 +49,22 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
     const color = numberColor(n);
     const isLast = n === lastNumber;
     const base =
-      'relative flex items-center justify-center text-white font-bold text-[10px] sm:text-xs cursor-pointer select-none transition-colors border border-black/40 rounded-sm min-h-8 sm:min-h-9';
+      'relative flex items-center justify-center text-white font-bold text-[10px] sm:text-xs cursor-pointer select-none border border-black/40 rounded-sm min-h-8 sm:min-h-9 transition-[transform,background-color,box-shadow] duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/80 focus-visible:ring-offset-1 focus-visible:ring-offset-[#071824]';
     const colorCls =
       color === 'green'
-        ? 'bg-[#147b3a] hover:bg-[#1a9348]'
+        ? 'bg-[#147b3a] hover:bg-[#1a9348] hover:brightness-110'
         : color === 'red'
-          ? 'bg-[#c41e1e] hover:bg-[#d42a2a]'
-          : 'bg-[#1c2833] hover:bg-[#243447]';
-    const lastCls = isLast ? 'ring-1 ring-amber-300/70' : '';
-    const disabledCls = disabled ? 'opacity-60 cursor-not-allowed' : '';
+          ? 'bg-[#c41e1e] hover:bg-[#d42a2a] hover:brightness-110'
+          : 'bg-[#1c2833] hover:bg-[#243447] hover:brightness-110';
+    const lastCls = isLast ? 'ring-1 ring-amber-300/80 shadow-[0_0_10px_rgba(251,191,36,0.25)]' : '';
+    const disabledCls = disabled ? 'opacity-55 cursor-not-allowed active:scale-100' : '';
     return `${base} ${colorCls} ${lastCls} ${disabledCls}`;
   }
 
   function outsideClass(active: boolean): string {
-    return `relative flex items-center justify-center min-h-9 sm:min-h-10 rounded-sm border border-[#2f4553] bg-[#1a2c38] text-[10px] sm:text-xs font-bold uppercase tracking-wide text-white/90 cursor-pointer select-none transition-colors hover:bg-[#213743]
-      ${active ? 'ring-1 ring-amber-300/60' : ''}
-      ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`;
+    return `relative flex items-center justify-center min-h-9 sm:min-h-10 rounded-sm border border-[#2f4553] bg-[#1a2c38] text-[10px] sm:text-xs font-bold uppercase tracking-wide text-white/90 cursor-pointer select-none transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-[#213743] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/80 focus-visible:ring-offset-1 focus-visible:ring-offset-[#071824]
+      ${active ? 'ring-1 ring-amber-300/70 shadow-[0_0_8px_rgba(251,191,36,0.2)]' : ''}
+      ${disabled ? 'opacity-55 cursor-not-allowed active:scale-100' : ''}`;
   }
 
   const place = (spot: RouletteSpot) => {
@@ -73,9 +74,8 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
 
   return (
     <div className="w-full flex flex-col gap-2">
-      <div className="w-full overflow-x-auto pb-1 -mx-0.5 px-0.5">
+      <div className="w-full overflow-x-auto pb-1 -mx-0.5 px-0.5 overscroll-x-contain">
         <div className="min-w-[520px] sm:min-w-0 flex flex-col gap-1">
-          {/* Main grid: 0 | numbers | 2:1 columns */}
           <div className="flex gap-1">
             <button
               type="button"
@@ -106,7 +106,7 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
                         className={cellClass(n)}
                         aria-label={`Bet number ${n}`}
                       >
-                        {n}
+                        <span className={stack ? 'opacity-40' : ''}>{n}</span>
                         {stack && <ChipMarker amount={stack.amount} />}
                       </button>
                     );
@@ -128,7 +128,7 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
                     className={outsideClass(Boolean(stack))}
                     aria-label={`Bet column ${column}, pays 2 to 1`}
                   >
-                    2:1
+                    <span className={stack ? 'opacity-40' : ''}>2:1</span>
                     {stack && <ChipMarker amount={stack.amount} />}
                   </button>
                 );
@@ -136,7 +136,6 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
             </div>
           </div>
 
-          {/* Dozens */}
           <div className="grid grid-cols-3 gap-1 pl-10 sm:pl-11 pr-11 sm:pr-13">
             {([1, 2, 3] as const).map((dozen) => {
               const spot: RouletteSpot = { type: 'dozen', dozen };
@@ -152,14 +151,13 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
                   className={outsideClass(Boolean(stack))}
                   aria-label={`Bet ${label}`}
                 >
-                  {label}
+                  <span className={stack ? 'opacity-40' : ''}>{label}</span>
                   {stack && <ChipMarker amount={stack.amount} />}
                 </button>
               );
             })}
           </div>
 
-          {/* Outside row */}
           <div className="grid grid-cols-6 gap-1 pl-10 sm:pl-11 pr-11 sm:pr-13">
             {(
               [
@@ -182,17 +180,15 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
                   disabled={disabled}
                   className={`${outsideClass(Boolean(stack))} ${red ? 'text-red-500' : ''} ${black ? 'text-zinc-300' : ''}`}
                   aria-label={
-                    spot.type === 'color'
-                      ? `Bet ${spot.color}`
-                      : `Bet ${label}`
+                    spot.type === 'color' ? `Bet ${spot.color}` : `Bet ${label}`
                   }
                 >
                   {red || black ? (
                     <span
-                      className={`inline-block h-4 w-4 rotate-45 border ${red ? 'border-red-500 bg-red-600/80' : 'border-zinc-400 bg-zinc-800'}`}
+                      className={`inline-block h-4 w-4 rotate-45 border transition-transform duration-150 ${stack ? 'opacity-40 scale-90' : ''} ${red ? 'border-red-500 bg-red-600/80' : 'border-zinc-400 bg-zinc-800'}`}
                     />
                   ) : (
-                    label
+                    <span className={stack ? 'opacity-40' : ''}>{label}</span>
                   )}
                   {stack && <ChipMarker amount={stack.amount} />}
                 </button>
@@ -207,7 +203,7 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
           type="button"
           onClick={onUndo}
           disabled={disabled || !canUndo}
-          className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wide text-zinc-300 bg-[#1a2c38] border border-[#2f4553] hover:bg-[#213743] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wide text-zinc-300 bg-[#1a2c38] border border-[#2f4553] hover:bg-[#213743] transition-[transform,background-color] duration-150 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
           aria-label="Undo last chip"
         >
           <span aria-hidden="true">↶</span>
@@ -217,7 +213,7 @@ export const RouletteBettingBoard: React.FC<RouletteBettingBoardProps> = ({
           type="button"
           onClick={onClear}
           disabled={disabled || stacks.size === 0}
-          className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wide text-zinc-300 bg-[#1a2c38] border border-[#2f4553] hover:bg-[#213743] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wide text-zinc-300 bg-[#1a2c38] border border-[#2f4553] hover:bg-[#213743] transition-[transform,background-color] duration-150 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
           aria-label="Clear all chips"
         >
           <span aria-hidden="true">↻</span>

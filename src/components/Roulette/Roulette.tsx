@@ -69,7 +69,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
     initialHistory = [],
     disabled = false,
     className = '',
-    spinDuration = 1600,
+    spinDuration = 2400,
     rng: rngProp,
     showHeader = false,
     showHistory = false,
@@ -89,6 +89,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
   );
   const [spinStatus, setSpinStatus] = useState<'idle' | 'win' | 'loss'>('idle');
   const [result, setResult] = useState<RouletteSpinResult | null>(null);
+  const [targetNumber, setTargetNumber] = useState<number | null>(null);
   const { stats, history, recordOutcome } = useGameSession<RouletteSpinResult>({
     initialHistory: trackSession ? initialHistory : [],
   });
@@ -200,6 +201,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
     onSpinStart?.();
 
     const landedNumber = Math.floor(rng() * 37);
+    setTargetNumber(landedNumber);
     const landedColor = resolveRouletteColor(landedNumber);
     const settlements = settleStacks(currentStacks, landedNumber);
     const totalWagered = totalWager(currentStacks);
@@ -231,6 +233,7 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
       setResult(spinResult);
       setSpinStatus(isWin ? 'win' : 'loss');
       setBusy(false);
+      setTargetNumber(null);
       setStacks(new Map());
       setHistoryActions([]);
 
@@ -256,9 +259,9 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
 
   return (
     <div
-      className={`w-full max-w-5xl rounded-2xl border border-[#2f4553] bg-[#0f212e] p-3 sm:p-5 relative flex flex-col select-none transition-all duration-300
-        ${spinStatus === 'win' ? 'shadow-[0_0_30px_rgba(0,231,1,0.12)]' : ''}
-        ${spinStatus === 'loss' ? 'shadow-[0_0_24px_rgba(225,29,72,0.1)]' : ''}
+      className={`w-full max-w-5xl rounded-2xl border border-[#2f4553] bg-[#0f212e] p-3 sm:p-5 relative flex flex-col select-none transition-[box-shadow,border-color] duration-500
+        ${spinStatus === 'win' ? 'border-emerald-500/30 shadow-[0_0_36px_rgba(0,231,1,0.14)]' : ''}
+        ${spinStatus === 'loss' ? 'border-rose-500/25 shadow-[0_0_28px_rgba(225,29,72,0.12)]' : ''}
         ${className}
       `}
     >
@@ -289,8 +292,10 @@ export const Roulette = forwardRef<RouletteHandle, RouletteProps>(function Roule
         <div className="flex-1 min-w-0 flex flex-col gap-3 rounded-xl bg-[#071824] border border-[#2f4553] p-3 sm:p-4">
           <RouletteWheelVisual
             isSpinning={isSpinning}
+            targetNumber={targetNumber}
             result={result}
             spinStatus={spinStatus}
+            spinDuration={spinDuration}
           />
 
           <div role="status" aria-live="polite" className="sr-only">
