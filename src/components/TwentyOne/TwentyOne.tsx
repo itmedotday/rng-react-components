@@ -81,10 +81,17 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
   executeRef.current = round.startDeal;
 
   const settledOutcome = round.lastResult?.outcome ?? null;
+  const isIdleFelt = round.phase === 'betting' && round.dealerCards.length === 0;
+  const panelGlow =
+    round.phase === 'settled' && settledOutcome === 'win'
+      ? 'animate-pulse-glow-green border-emerald-500/40'
+      : round.phase === 'settled' && settledOutcome === 'loss'
+        ? 'animate-pulse-glow-red border-rose-500/40'
+        : 'border-zinc-800/80';
 
   return (
     <div
-      className={`w-full max-w-lg rounded-3xl border border-zinc-800/80 bg-[#1a2332] p-5 relative flex flex-col select-none shadow-[0_20px_60px_rgba(0,0,0,0.45)] ${className}`}
+      className={`w-full max-w-lg rounded-3xl border bg-[#1a2332] p-5 relative flex flex-col select-none shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition-[border-color,box-shadow] duration-500 ${panelGlow} ${className}`}
     >
       {showHeader && (
         <StatsHeader
@@ -94,9 +101,18 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
         />
       )}
 
-      <div className="relative w-full rounded-2xl bg-[#15202b] border border-zinc-800/60 px-4 pt-6 pb-8 mb-4 min-h-[340px] flex flex-col items-center">
+      <div className="relative w-full rounded-2xl bg-[#15202b] border border-zinc-800/60 px-4 pt-6 pb-8 mb-4 min-h-[360px] flex flex-col items-center overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 50% 20%, rgba(16,185,129,0.08), transparent 55%), radial-gradient(ellipse at 50% 85%, rgba(244,63,94,0.06), transparent 50%)',
+          }}
+          aria-hidden="true"
+        />
+
         <div className="absolute top-3 right-3 opacity-80" aria-hidden="true">
-          <div className="relative w-8 h-11">
+          <div className="relative w-8 h-11 transition-transform duration-300 hover:scale-105">
             <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-500 translate-x-0.5 -translate-y-0.5" />
             <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-500 flex items-center justify-center text-[8px] font-black text-slate-300">
               21
@@ -127,7 +143,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
           size="lg"
         />
 
-        <div className="my-5 text-center text-[10px] font-semibold tracking-[0.2em] text-zinc-500 uppercase leading-relaxed">
+        <div className="my-5 text-center text-[10px] font-semibold tracking-[0.2em] text-zinc-500 uppercase leading-relaxed relative z-[1]">
           <div>Blackjack pays 3 to 2</div>
           <div>Insurance pays 2 to 1</div>
         </div>
@@ -153,15 +169,30 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
         />
 
         {round.hands.length > 1 && (
-          <div className="mt-2 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+          <div className="mt-2 text-[10px] text-zinc-500 font-bold uppercase tracking-wider twentyone-outcome-in">
             Hand {round.activeHand + 1} of {round.hands.length}
           </div>
         )}
 
-        <div className="mt-4 h-7 flex items-center justify-center">
+        <div className="mt-4 h-7 flex items-center justify-center relative z-[1]">
+          {isIdleFelt && (
+            <div className="text-xs text-zinc-500 tracking-wide">
+              Place a bet to deal
+            </div>
+          )}
+          {round.phase === 'dealing' && (
+            <div className="text-xs font-bold text-zinc-400 tracking-wide twentyone-outcome-in">
+              Dealing…
+            </div>
+          )}
+          {round.phase === 'dealer' && !round.statusMessage && (
+            <div className="text-xs font-bold text-zinc-400 tracking-wide twentyone-outcome-in">
+              Dealer plays…
+            </div>
+          )}
           {round.statusMessage && round.phase === 'settled' && (
             <div
-              className={`px-4 py-1 rounded-full border text-xs font-black uppercase tracking-wider
+              className={`twentyone-outcome-in px-4 py-1 rounded-full border text-xs font-black uppercase tracking-wider
                 ${
                   round.lastResult?.outcome === 'win'
                     ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
@@ -175,7 +206,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
             </div>
           )}
           {round.phase === 'insurance' && (
-            <div className="text-xs font-bold text-amber-300/90 tracking-wide">
+            <div className="text-xs font-bold text-amber-300/90 tracking-wide twentyone-outcome-in">
               Dealer shows Ace — insurance?
             </div>
           )}
@@ -184,7 +215,11 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
 
       <div className="w-full rounded-2xl bg-zinc-900/70 border border-zinc-800/80 p-3 flex flex-col gap-3">
         <ActionPad
-          phase={round.phase === 'settled' ? 'betting' : round.phase}
+          phase={
+            round.phase === 'settled' || round.phase === 'dealing'
+              ? 'betting'
+              : round.phase
+          }
           canHit={
             round.phase === 'player' &&
             !!round.currentHand &&
@@ -193,7 +228,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
           canStand={round.phase === 'player'}
           canDouble={round.canDouble}
           canSplit={round.canSplit}
-          disabled={disabled || round.phase === 'dealer'}
+          disabled={disabled || round.phase === 'dealer' || round.phase === 'dealing'}
           onHit={round.onHit}
           onStand={round.onStand}
           onDouble={round.onDouble}
@@ -213,6 +248,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
           onHalf={() => round.setBetAmount(round.bet / 2)}
           onDouble={() => round.setBetAmount(round.bet * 2)}
           onPlaceBet={round.startDeal}
+          placeLabel={round.phase === 'dealing' ? 'Dealing…' : 'Bet'}
         />
       </div>
 
@@ -228,7 +264,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
               {history.slice(-8).reverse().map((entry) => (
                 <li
                   key={entry.id}
-                  className="text-sm text-zinc-300 font-mono flex justify-between gap-2"
+                  className="text-sm text-zinc-300 font-mono flex justify-between gap-2 twentyone-outcome-in"
                 >
                   <span>
                     P {entry.playerTotal} vs D {entry.dealerTotal}
@@ -257,7 +293,7 @@ export const TwentyOne = forwardRef<TwentyOneHandle, TwentyOneProps>(function Tw
       )}
 
       {showRules && (
-        <div className="w-full mt-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/30 p-4 text-sm text-zinc-400">
+        <div className="w-full mt-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/30 p-4 text-sm text-zinc-400 leading-relaxed">
           Hit, stand, double, or take insurance when the dealer shows an Ace.
           Blackjack pays 3:2. Dealer hits soft 17. Split pairs when available.
         </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Card } from '../types';
 import { formatHandTotals, handValue } from '../blackjack';
 import { PlayingCard } from './PlayingCard';
@@ -18,9 +17,11 @@ export interface CardHandProps {
   size?: 'sm' | 'md' | 'lg';
   /** Score pill tone: dealer = dark, player = red when active. */
   pillTone?: 'dealer' | 'player' | 'neutral';
+  /** Animate newly dealt cards. Default true. */
+  animateDeal?: boolean;
 }
 
-export const CardHand: React.FC<CardHandProps> = ({
+export function CardHand({
   cards,
   label,
   labelId,
@@ -31,7 +32,8 @@ export const CardHand: React.FC<CardHandProps> = ({
   highlight = null,
   size = 'lg',
   pillTone = 'neutral',
-}) => {
+  animateDeal = true,
+}: CardHandProps) {
   const visibleCards = cards.filter((_, i) => !hiddenIndices.includes(i));
   const value = handValue(visibleCards.length > 0 ? visibleCards : cards);
   const isBust = highlight === 'bust' || (showTotal && value.isBust && hiddenIndices.length === 0);
@@ -51,9 +53,11 @@ export const CardHand: React.FC<CardHandProps> = ({
           : 'bg-zinc-800/90 text-white border-zinc-700';
 
   const overlap = size === 'lg' ? -28 : size === 'md' ? -20 : -14;
+  const slot =
+    size === 'lg' ? 'w-[4.5rem] h-[6.25rem]' : size === 'md' ? 'w-14 h-20' : 'w-10 h-14';
 
   return (
-    <div className="flex flex-col items-center gap-2 min-w-0">
+    <div className="flex flex-col items-center gap-2.5 min-w-0">
       {label && (
         <div
           className="text-[11px] text-zinc-500 font-black uppercase tracking-wider"
@@ -65,7 +69,8 @@ export const CardHand: React.FC<CardHandProps> = ({
 
       {totalText !== null && (
         <div
-          className={`px-3 py-1 rounded-full border text-sm font-black font-mono tracking-tight shadow-md ${pillCls}`}
+          key={totalText}
+          className={`twentyone-pill-pop px-3 py-1 rounded-full border text-sm font-black font-mono tracking-tight shadow-md ${pillCls}`}
           role="status"
           aria-live="polite"
           aria-labelledby={labelId}
@@ -79,11 +84,11 @@ export const CardHand: React.FC<CardHandProps> = ({
 
       <div className="relative flex justify-center items-end min-h-[6.5rem] px-2">
         {cards.length === 0 ? (
-          <div className="flex" style={{ gap: 8 }}>
+          <div className="flex gap-2">
             {[0, 1].map((i) => (
               <div
                 key={i}
-                className="w-[4.5rem] h-[6.25rem] rounded-lg border border-dashed border-zinc-700/50 bg-zinc-900/20"
+                className={`${slot} rounded-lg border border-dashed border-zinc-700/45 bg-zinc-900/25`}
               />
             ))}
           </div>
@@ -92,6 +97,7 @@ export const CardHand: React.FC<CardHandProps> = ({
             {cards.map((c, i) => (
               <div
                 key={`${c.rank}${c.suit}-${i}`}
+                className="transition-[margin] duration-300 ease-out"
                 style={{ marginLeft: i === 0 ? 0 : overlap, zIndex: i }}
               >
                 <PlayingCard
@@ -101,8 +107,14 @@ export const CardHand: React.FC<CardHandProps> = ({
                   size={size}
                   playerActive={playerActive && !hiddenIndices.includes(i)}
                   highlight={
-                    highlight === 'win' ? 'win' : isBust && !hiddenIndices.includes(i) ? 'bust' : null
+                    highlight === 'win'
+                      ? 'win'
+                      : isBust && !hiddenIndices.includes(i)
+                        ? 'bust'
+                        : null
                   }
+                  animateIn={animateDeal}
+                  dealDelayMs={0}
                 />
               </div>
             ))}
@@ -111,4 +123,4 @@ export const CardHand: React.FC<CardHandProps> = ({
       </div>
     </div>
   );
-};
+}

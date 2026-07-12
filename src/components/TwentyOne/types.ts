@@ -16,6 +16,7 @@ export type HandOutcome = 'win' | 'loss' | 'push';
 
 export type TwentyOnePhase =
   | 'betting'
+  | 'dealing'
   | 'insurance'
   | 'player'
   | 'dealer'

@@ -30,12 +30,14 @@ function ActionButton({
   onClick,
   disabled,
   accent = 'zinc',
+  emphasize = false,
 }: {
   label: string;
   icon: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   accent?: 'zinc' | 'amber' | 'violet' | 'emerald' | 'rose';
+  emphasize?: boolean;
 }) {
   const accentCls =
     accent === 'amber'
@@ -53,15 +55,17 @@ function ActionButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-3.5 text-sm font-bold tracking-wide transition-all
+      className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-3.5 text-sm font-bold tracking-wide transition-[background-color,border-color,transform,box-shadow,opacity] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2332]
         ${
           disabled
             ? 'bg-zinc-900/80 border-zinc-800 text-zinc-600 cursor-not-allowed'
-            : 'bg-zinc-800/90 border-zinc-700 text-zinc-100 hover:bg-zinc-700 active:scale-[0.98] cursor-pointer'
+            : `bg-zinc-800/90 border-zinc-700 text-zinc-100 hover:bg-zinc-700 hover:border-zinc-600 active:scale-[0.98] cursor-pointer ${emphasize ? 'twentyone-action-ready border-zinc-500' : ''}`
         }
       `}
     >
-      <span className={disabled ? 'text-zinc-600' : accentCls}>{icon}</span>
+      <span className={`transition-colors duration-200 ${disabled ? 'text-zinc-600' : accentCls}`}>
+        {icon}
+      </span>
       {label}
     </button>
   );
@@ -83,13 +87,14 @@ export function ActionPad({
 }: ActionPadProps) {
   if (phase === 'insurance') {
     return (
-      <div className="grid grid-cols-2 gap-2 w-full">
+      <div className="grid grid-cols-2 gap-2 w-full twentyone-outcome-in">
         <ActionButton
           label="Insurance"
           icon={<Shield className="w-4 h-4" />}
           onClick={onInsuranceAccept}
           disabled={disabled}
           accent="emerald"
+          emphasize
         />
         <ActionButton
           label="No Insurance"
@@ -112,6 +117,7 @@ export function ActionPad({
         onClick={onHit}
         disabled={actionsLocked || !canHit}
         accent="amber"
+        emphasize={!actionsLocked && canHit}
       />
       <ActionButton
         label="Stand"
@@ -119,6 +125,7 @@ export function ActionPad({
         onClick={onStand}
         disabled={actionsLocked || !canStand}
         accent="violet"
+        emphasize={!actionsLocked && canStand}
       />
       <ActionButton
         label="Split"
@@ -131,6 +138,7 @@ export function ActionPad({
         icon={<Coins className="w-4 h-4" />}
         onClick={onDouble}
         disabled={actionsLocked || !canDouble}
+        emphasize={!actionsLocked && canDouble}
       />
     </div>
   );

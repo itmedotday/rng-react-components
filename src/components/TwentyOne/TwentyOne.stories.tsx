@@ -77,12 +77,16 @@ export const BetAndActions: Story = {
     });
 
     await step('Action pad, insurance, or settle appears', async () => {
-      await waitFor(() => {
-        const hit = canvas.queryByRole('button', { name: /^hit$/i });
-        const insurance = canvas.queryByRole('button', { name: /^insurance$/i });
-        const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-        expect(hit || insurance || status).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          const hit = canvas.queryByRole('button', { name: /^hit$/i });
+          const insurance = canvas.queryByRole('button', { name: /^insurance$/i });
+          const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+          const hitEnabled = hit && !hit.hasAttribute('disabled');
+          expect(hitEnabled || insurance || status).toBeTruthy();
+        },
+        { timeout: 4000 },
+      );
     });
   },
 };
@@ -97,22 +101,28 @@ export const HitThenStand: Story = {
     });
 
     await step('Decline insurance if offered', async () => {
-      await waitFor(() => {
-        const hit = canvas.queryByRole('button', { name: /^hit$/i });
-        const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
-        const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-        expect(hit || noIns || status).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          const hit = canvas.queryByRole('button', { name: /^hit$/i });
+          const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
+          const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+          expect(hit || noIns || status).toBeTruthy();
+        },
+        { timeout: 4000 },
+      );
       const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
       if (noIns) await userEvent.click(noIns);
     });
 
     await step('Hit once when available, then stand', async () => {
-      await waitFor(() => {
-        const hit = canvas.queryByRole('button', { name: /^hit$/i });
-        const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-        expect(hit || status).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          const hit = canvas.queryByRole('button', { name: /^hit$/i });
+          const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+          expect(hit || status).toBeTruthy();
+        },
+        { timeout: 4000 },
+      );
 
       const hit = canvas.queryByRole('button', { name: /^hit$/i });
       if (hit && !hit.hasAttribute('disabled')) {
@@ -128,7 +138,7 @@ export const HitThenStand: Story = {
         () => {
           expect(canvas.getByRole('button', { name: /^bet$/i })).not.toBeDisabled();
         },
-        { timeout: 3000 },
+        { timeout: 6000 },
       );
     });
   },
@@ -144,23 +154,29 @@ export const DoubleWhenAvailable: Story = {
     });
 
     await step('Clear insurance gate if present', async () => {
-      await waitFor(() => {
-        const double = canvas.queryByRole('button', { name: /^double$/i });
-        const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
-        const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-        expect(double || noIns || status).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          const double = canvas.queryByRole('button', { name: /^double$/i });
+          const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
+          const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+          expect(double || noIns || status).toBeTruthy();
+        },
+        { timeout: 4000 },
+      );
       const noIns = canvas.queryByRole('button', { name: /^no insurance$/i });
       if (noIns) await userEvent.click(noIns);
     });
 
     await step('Double when enabled, otherwise stand', async () => {
-      await waitFor(() => {
-        const double = canvas.queryByRole('button', { name: /^double$/i });
-        const stand = canvas.queryByRole('button', { name: /^stand$/i });
-        const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
-        expect(double || stand || status).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          const double = canvas.queryByRole('button', { name: /^double$/i });
+          const stand = canvas.queryByRole('button', { name: /^stand$/i });
+          const status = canvas.queryByText(/blackjack!|you win|dealer wins|push|bust/i);
+          expect(double || stand || status).toBeTruthy();
+        },
+        { timeout: 4000 },
+      );
 
       const double = canvas.queryByRole('button', { name: /^double$/i });
       if (double && !double.hasAttribute('disabled')) {
@@ -176,7 +192,7 @@ export const DoubleWhenAvailable: Story = {
         () => {
           expect(canvas.getByRole('button', { name: /^bet$/i })).not.toBeDisabled();
         },
-        { timeout: 3000 },
+        { timeout: 6000 },
       );
     });
   },

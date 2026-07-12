@@ -9,7 +9,7 @@ import {
   insuranceCost,
   isBlackjack,
   isPair,
-  playDealer,
+  dealerShouldHit,
   settleInsurance,
   settleMainHand,
   shuffleShoe,
@@ -20,6 +20,13 @@ import type {
   TwentyOnePhase,
   TwentyOneResult,
 } from './types';
+import {
+  DEAL_STEP_MS,
+  DEALER_HIT_MS,
+  HOLE_REVEAL_MS,
+  SETTLE_PAUSE_MS,
+  wait,
+} from './motion';
 
 export interface LiveHand {
   cards: Card[];
@@ -76,6 +83,7 @@ export function useTwentyOneRound({
   const betRef = useRef(bet);
   const balanceRef = useRef(balance);
   const insuranceRef = useRef(insuranceBet);
+  const runIdRef = useRef(0);
 
   useEffect(() => {
     betRef.current = bet;
@@ -88,6 +96,12 @@ export function useTwentyOneRound({
   useEffect(() => {
     insuranceRef.current = insuranceBet;
   }, [insuranceBet]);
+
+  useEffect(() => {
+    return () => {
+      runIdRef.current += 1;
+    };
+  }, []);
 
   const applyBalance = useCallback(
     (next: number) => {
@@ -254,34 +268,64 @@ export function useTwentyOneRound({
     ) => {
       const stake = betRef.current;
       const allBust = finishedHands.every((h) => handValue(h.cards).isBust);
+      const runId = ++runIdRef.current;
 
-      if (!allBust) setPhase('dealer');
-      const played = allBust
-        ? { cards: currentDealer, shoe: currentShoe }
-        : playDealer(currentDealer, currentShoe);
+      const finish = (finalDealer: Card[], finalShoe: Card[]) => {
+        if (runId !== runIdRef.current) return;
+        if (finishedHands.length === 1) {
+          publishResult(
+            finishedHands[0].cards,
+            finalDealer,
+            stake,
+            finishedHands[0].doubled,
+            insBet,
+            finalShoe,
+            balanceBeforePayout,
+          );
+        } else {
+          publishSplitResults(
+            finishedHands,
+            finalDealer,
+            stake,
+            insBet,
+            finalShoe,
+            balanceBeforePayout,
+          );
+        }
+      };
 
-      if (finishedHands.length === 1) {
-        publishResult(
-          finishedHands[0].cards,
-          played.cards,
-          stake,
-          finishedHands[0].doubled,
-          insBet,
-          played.shoe,
-          balanceBeforePayout,
-        );
-      } else {
-        publishSplitResults(
-          finishedHands,
-          played.cards,
-          stake,
-          insBet,
-          played.shoe,
-          balanceBeforePayout,
-        );
-      }
+      void (async () => {
+        if (allBust) {
+          await wait(SETTLE_PAUSE_MS);
+          finish(currentDealer, currentShoe);
+          return;
+        }
+
+        setPhase('dealer');
+        // Reveal hole card, then hit one-by-one.
+        await wait(HOLE_REVEAL_MS);
+        if (runId !== runIdRef.current) return;
+
+        let cards = [...currentDealer];
+        let remaining = currentShoe;
+        setDealerCards(cards);
+
+        while (dealerShouldHit(cards)) {
+          await wait(DEALER_HIT_MS);
+          if (runId !== runIdRef.current) return;
+          const drawn = drawCard(ensureShoe(remaining, rng));
+          cards = [...cards, drawn.card];
+          remaining = drawn.shoe;
+          setDealerCards(cards);
+          setShoe(remaining);
+        }
+
+        await wait(SETTLE_PAUSE_MS);
+        if (runId !== runIdRef.current) return;
+        finish(cards, remaining);
+      })();
     },
-    [publishResult, publishSplitResults],
+    [publishResult, publishSplitResults, rng],
   );
 
   const advanceAfterPlayerDone = useCallback(
@@ -313,47 +357,70 @@ export function useTwentyOneRound({
     const bal = balanceRef.current;
     if (stake <= 0 || stake > bal) return;
 
+    const runId = ++runIdRef.current;
     onDealStart?.();
     setBusy(true);
     setLastResult(null);
     setStatusMessage(null);
     insuranceRef.current = 0;
     setInsuranceBet(0);
-
-    let nextShoe = ensureShoe(shoe, rng);
-    const d1 = drawCard(nextShoe);
-    nextShoe = d1.shoe;
-    const p1 = drawCard(nextShoe);
-    nextShoe = p1.shoe;
-    const d2 = drawCard(nextShoe);
-    nextShoe = d2.shoe;
-    const p2 = drawCard(nextShoe);
-    nextShoe = p2.shoe;
-
-    const dealer = [d1.card, d2.card];
-    const player = [p1.card, p2.card];
-    const balanceAfterBet = bal - stake;
-
-    setShoe(nextShoe);
-    setDealerCards(dealer);
-    setHands([{ cards: player, doubled: false, fromSplit: false, done: false }]);
+    setPhase('dealing');
+    setDealerCards([]);
+    setHands([]);
     setActiveHand(0);
+
+    const balanceAfterBet = bal - stake;
     applyBalance(balanceAfterBet);
 
-    const playerBj = isBlackjack(player);
-    const dealerBj = isBlackjack(dealer);
+    void (async () => {
+      let nextShoe = ensureShoe(shoe, rng);
 
-    if (dealer[0].rank === 'A' && !playerBj) {
-      setPhase('insurance');
-      return;
-    }
+      const p1 = drawCard(nextShoe);
+      nextShoe = p1.shoe;
+      setHands([{ cards: [p1.card], doubled: false, fromSplit: false, done: false }]);
+      await wait(DEAL_STEP_MS);
+      if (runId !== runIdRef.current) return;
 
-    if (playerBj || dealerBj) {
-      publishResult(player, dealer, stake, false, 0, nextShoe, balanceAfterBet);
-      return;
-    }
+      const d1 = drawCard(nextShoe);
+      nextShoe = d1.shoe;
+      setDealerCards([d1.card]);
+      await wait(DEAL_STEP_MS);
+      if (runId !== runIdRef.current) return;
 
-    setPhase('player');
+      const p2 = drawCard(nextShoe);
+      nextShoe = p2.shoe;
+      setHands([{ cards: [p1.card, p2.card], doubled: false, fromSplit: false, done: false }]);
+      await wait(DEAL_STEP_MS);
+      if (runId !== runIdRef.current) return;
+
+      const d2 = drawCard(nextShoe);
+      nextShoe = d2.shoe;
+      const dealer = [d1.card, d2.card];
+      const player = [p1.card, p2.card];
+      setDealerCards(dealer);
+      setShoe(nextShoe);
+      await wait(SETTLE_PAUSE_MS);
+      if (runId !== runIdRef.current) return;
+
+      const playerBj = isBlackjack(player);
+      const dealerBj = isBlackjack(dealer);
+
+      if (dealer[0].rank === 'A' && !playerBj) {
+        setPhase('insurance');
+        return;
+      }
+
+      if (playerBj || dealerBj) {
+        // Reveal hole before settling naturals so the flip is visible.
+        setPhase('dealer');
+        await wait(HOLE_REVEAL_MS);
+        if (runId !== runIdRef.current) return;
+        publishResult(player, dealer, stake, false, 0, nextShoe, balanceAfterBet);
+        return;
+      }
+
+      setPhase('player');
+    })();
   }, [
     applyBalance,
     commitBetInput,
@@ -386,9 +453,15 @@ export function useTwentyOneRound({
 
       const dealer = dealerCards;
       const player = hands[0].cards;
+      const runId = ++runIdRef.current;
 
       if (isBlackjack(dealer) || isBlackjack(player)) {
-        publishResult(player, dealer, stake, false, ins, shoe, bal);
+        void (async () => {
+          setPhase('dealer');
+          await wait(HOLE_REVEAL_MS);
+          if (runId !== runIdRef.current) return;
+          publishResult(player, dealer, stake, false, ins, shoe, bal);
+        })();
         return;
       }
 
@@ -484,7 +557,10 @@ export function useTwentyOneRound({
     isPair(currentHand.cards) &&
     balance >= bet;
   const bettingEnabled = !disabled && (phase === 'betting' || phase === 'settled');
-  const holeHidden = phase === 'insurance' || phase === 'player';
+  const holeHidden =
+    (phase === 'dealing' && dealerCards.length >= 2) ||
+    phase === 'insurance' ||
+    phase === 'player';
 
   return {
     phase,

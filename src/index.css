@@ -342,3 +342,122 @@ body {
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * TwentyOne / blackjack motion
+ * ------------------------------------------------------------------------- */
+
+@keyframes twentyOneDealIn {
+  from {
+    opacity: 0;
+    transform: translate3d(28px, -18px, 0) rotate(8deg) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes twentyOnePillPop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes twentyOneOutcomeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes twentyOneActionReady {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+  }
+}
+
+@keyframes twentyOneBetReady {
+  0%,
+  100% {
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.28);
+  }
+  50% {
+    box-shadow: 0 4px 28px rgba(16, 185, 129, 0.48);
+  }
+}
+
+.twentyone-deal-in {
+  animation: twentyOneDealIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top right;
+}
+
+.twentyone-pill-pop {
+  animation: twentyOnePillPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.twentyone-outcome-in {
+  animation: twentyOneOutcomeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.twentyone-action-ready {
+  animation: twentyOneActionReady 1.8s ease-in-out infinite;
+}
+
+.twentyone-bet-ready {
+  animation: twentyOneBetReady 1.8s ease-in-out infinite;
+}
+
+.twentyone-card-scene {
+  perspective: 900px;
+}
+
+.twentyone-card-flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.twentyone-card-flipper.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.twentyone-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.twentyone-card-face.is-back {
+  transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twentyone-deal-in,
+  .twentyone-pill-pop,
+  .twentyone-outcome-in,
+  .twentyone-action-ready,
+  .twentyone-bet-ready {
+    animation: none !important;
+  }
+
+  .twentyone-card-flipper {
+    transition: none !important;
+  }
+}
