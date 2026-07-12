@@ -118,6 +118,13 @@ export {
   spotOdds,
 } from './components/Roulette/rouletteMath';
 
+export { PhaserRoulette } from './components/PhaserRoulette/PhaserRoulette';
+export type {
+  PhaserRouletteHandle,
+  PhaserRouletteProps,
+  PhaserRouletteResult,
+} from './components/PhaserRoulette/types';
+
 export { TwentyOne } from './components/TwentyOne/TwentyOne';
 export type {
   TwentyOneHandle,

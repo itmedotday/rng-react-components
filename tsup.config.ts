@@ -9,7 +9,7 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   tsconfig: 'tsconfig.lib.json',
-  external: ['react', 'react-dom', '@react-spring/web', 'lucide-react'],
+  external: ['react', 'react-dom', '@react-spring/web', 'lucide-react', 'phaser'],
   esbuildOptions(options) {
     options.loader = {
       ...options.loader,
