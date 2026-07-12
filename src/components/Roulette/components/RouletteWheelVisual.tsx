@@ -136,6 +136,8 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
       rafIdRef.current = null;
     }
 
+    // Keep outcome badge hidden while a new animation is in progress.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOutcomeVisible(false);
 
     const localPocket = pocketLocalAngle(pocketIndexFor(targetNumber));
@@ -190,7 +192,11 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
 
   useEffect(() => {
     if (isSpinning || !result) {
-      if (!result) setOutcomeVisible(false);
+      if (!result) {
+        // Clear stale outcome text whenever upstream result is reset.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setOutcomeVisible(false);
+      }
       return;
     }
 
