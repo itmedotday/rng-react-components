@@ -8,13 +8,19 @@ const meta: Meta<typeof Roulette> = {
   title: 'Components/Roulette',
   component: Roulette,
   parameters: {
-    layout: 'centered',
+    layout: 'padded',
     backgrounds: {
       default: 'stake',
       values: [
         { name: 'stake', value: '#0f212e' },
         { name: 'dark', value: '#09090b' },
       ],
+    },
+    docs: {
+      description: {
+        component:
+          'Stake-style European roulette: pick chip denominations, stack chips on multiple cloth spots, then Play. The ball is always visible on the wheel; layout stacks on mobile.',
+      },
     },
   },
   tags: ['autodocs'],
@@ -23,7 +29,16 @@ const meta: Meta<typeof Roulette> = {
     onSpinComplete: { action: 'spin completed' },
     onIsSpinningChange: { action: 'is spinning changed' },
     spinRequest: { control: 'number' },
+    initialChipValue: { control: 'number' },
+    spinDuration: { control: 'number' },
   },
+  decorators: [
+    (Story) => (
+      <div className="w-full max-w-5xl">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
@@ -33,6 +48,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: /^play$/i })).toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: /^play$/i })).toBeDisabled();
   },
 };
 
@@ -44,13 +60,26 @@ export const FullConsole: Story = {
   },
 };
 
+export const WithInitialBet: Story = {
+  args: {
+    initialBet: { type: 'color', color: 'red' },
+    initialChipValue: 25,
+    showHistory: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: /^play$/i })).not.toBeDisabled();
+  },
+};
+
 export const MultiChipSpin: Story = {
   args: { showHistory: true },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const playButton = canvas.getByRole('button', { name: /^play$/i });
 
-    await step('Place chips on multiple spots', async () => {
+    await step('Select a larger chip, then place on multiple spots', async () => {
+      await userEvent.click(canvas.getByRole('option', { name: '100' }));
       await userEvent.click(canvas.getByRole('button', { name: 'Bet number 17' }));
       await userEvent.click(canvas.getByRole('button', { name: 'Bet red' }));
       await userEvent.click(canvas.getByRole('button', { name: 'Bet Even' }));
@@ -62,7 +91,6 @@ export const MultiChipSpin: Story = {
       await expect(playButton).toBeDisabled();
       await waitFor(
         async () => {
-          // Table clears after settle, so Play stays disabled — assert spin finished.
           await expect(playButton).toHaveTextContent(/^play$/i);
         },
         { timeout: 2800 },
@@ -71,8 +99,33 @@ export const MultiChipSpin: Story = {
   },
 };
 
+export const UndoAndClear: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Place chips', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Bet number 7' }));
+      await userEvent.click(canvas.getByRole('button', { name: 'Bet black' }));
+      await expect(canvas.getByRole('button', { name: 'Undo last chip' })).not.toBeDisabled();
+    });
+
+    await step('Undo last placement', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Undo last chip' }));
+      await expect(canvas.getByRole('button', { name: /^play$/i })).not.toBeDisabled();
+    });
+
+    await step('Clear the table', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Clear all chips' }));
+      await expect(canvas.getByRole('button', { name: /^play$/i })).toBeDisabled();
+    });
+  },
+};
+
 export const Disabled: Story = {
-  args: { disabled: true },
+  args: {
+    disabled: true,
+    initialBet: { type: 'number', number: 1 },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: /^play$/i })).toBeDisabled();
@@ -80,15 +133,29 @@ export const Disabled: Story = {
 };
 
 export const FastSpin: Story = {
-  args: { spinDuration: 250 },
+  args: {
+    spinDuration: 250,
+    initialBet: { type: 'color', color: 'black' },
+  },
+};
+
+export const CustomChipStrip: Story = {
+  args: {
+    chipValues: [1, 10, 100, 1000, 10_000],
+    initialChipValue: 100,
+    showRules: true,
+  },
 };
 
 export const MobileWidth: Story = {
   parameters: {
     viewport: { defaultViewport: 'mobile1' },
+    layout: 'fullscreen',
   },
   args: {
     showHistory: true,
+    showRules: true,
+    initialBet: { type: 'color', color: 'red' },
   },
 };
 
