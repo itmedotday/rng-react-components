@@ -10,8 +10,11 @@ const meta: Meta<typeof Roulette> = {
   parameters: {
     layout: 'centered',
     backgrounds: {
-      default: 'dark',
-      values: [{ name: 'dark', value: '#09090b' }],
+      default: 'stake',
+      values: [
+        { name: 'stake', value: '#0f212e' },
+        { name: 'dark', value: '#09090b' },
+      ],
     },
   },
   tags: ['autodocs'],
@@ -29,7 +32,7 @@ type Story = StoryObj<typeof Roulette>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: /spin/i })).toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: /^play$/i })).toBeInTheDocument();
   },
 };
 
@@ -41,20 +44,28 @@ export const FullConsole: Story = {
   },
 };
 
-export const SpinSimulation: Story = {
+export const MultiChipSpin: Story = {
   args: { showHistory: true },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const spinButton = canvas.getByRole('button', { name: /spin/i });
+    const playButton = canvas.getByRole('button', { name: /^play$/i });
 
-    await step('Clicking spin triggers spin animation', async () => {
-      await userEvent.click(spinButton);
-      await expect(spinButton).toBeDisabled();
+    await step('Place chips on multiple spots', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Bet number 17' }));
+      await userEvent.click(canvas.getByRole('button', { name: 'Bet red' }));
+      await userEvent.click(canvas.getByRole('button', { name: 'Bet Even' }));
+      await expect(playButton).not.toBeDisabled();
+    });
+
+    await step('Play spins the wheel', async () => {
+      await userEvent.click(playButton);
+      await expect(playButton).toBeDisabled();
       await waitFor(
         async () => {
-          await expect(spinButton).not.toBeDisabled();
+          // Table clears after settle, so Play stays disabled — assert spin finished.
+          await expect(playButton).toHaveTextContent(/^play$/i);
         },
-        { timeout: 2200 },
+        { timeout: 2800 },
       );
     });
   },
@@ -64,7 +75,7 @@ export const Disabled: Story = {
   args: { disabled: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: /spin/i })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: /^play$/i })).toBeDisabled();
   },
 };
 
@@ -72,10 +83,19 @@ export const FastSpin: Story = {
   args: { spinDuration: 250 },
 };
 
+export const MobileWidth: Story = {
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' },
+  },
+  args: {
+    showHistory: true,
+  },
+};
+
 function ExternalSpinRequestDemo() {
   const [spinRequest, setSpinRequest] = useState(0);
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full max-w-5xl">
       <button
         type="button"
         className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wide"
@@ -83,7 +103,7 @@ function ExternalSpinRequestDemo() {
       >
         Spin from parent
       </button>
-      <Roulette spinRequest={spinRequest} />
+      <Roulette spinRequest={spinRequest} initialBet={{ type: 'color', color: 'red' }} />
     </div>
   );
 }
@@ -92,15 +112,15 @@ export const ExternalSpinRequest: Story = {
   render: () => <ExternalSpinRequestDemo />,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const spinButton = canvas.getByRole('button', { name: /^spin \(/i });
+    const playButton = canvas.getByRole('button', { name: /^play$/i });
     await step('Parent spinRequest triggers spin', async () => {
       await userEvent.click(canvas.getByRole('button', { name: /spin from parent/i }));
-      await expect(spinButton).toBeDisabled();
+      await expect(playButton).toBeDisabled();
       await waitFor(
         async () => {
-          await expect(spinButton).not.toBeDisabled();
+          await expect(playButton).toHaveTextContent(/^play$/i);
         },
-        { timeout: 2200 },
+        { timeout: 2800 },
       );
     });
   },
@@ -109,7 +129,7 @@ export const ExternalSpinRequest: Story = {
 function ImperativeSpinDemo() {
   const rouletteRef = useRef<RouletteHandle>(null);
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full max-w-5xl">
       <button
         type="button"
         className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wide"
@@ -117,7 +137,7 @@ function ImperativeSpinDemo() {
       >
         Spin via ref
       </button>
-      <Roulette ref={rouletteRef} />
+      <Roulette ref={rouletteRef} initialBet={{ type: 'number', number: 7 }} />
     </div>
   );
 }
@@ -126,15 +146,15 @@ export const ImperativeSpin: Story = {
   render: () => <ImperativeSpinDemo />,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const spinButton = canvas.getByRole('button', { name: /^spin \(/i });
+    const playButton = canvas.getByRole('button', { name: /^play$/i });
     await step('ref.spin() triggers spin', async () => {
       await userEvent.click(canvas.getByRole('button', { name: /spin via ref/i }));
-      await expect(spinButton).toBeDisabled();
+      await expect(playButton).toBeDisabled();
       await waitFor(
         async () => {
-          await expect(spinButton).not.toBeDisabled();
+          await expect(playButton).toHaveTextContent(/^play$/i);
         },
-        { timeout: 2200 },
+        { timeout: 2800 },
       );
     });
   },

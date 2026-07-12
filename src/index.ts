@@ -93,11 +93,30 @@ export type {
   RouletteSpinResult,
   RouletteColor,
   RouletteBet,
+  RouletteSpot,
+  ChipPlacement,
+  SpotStack,
+  SpotSettlement,
 } from './components/Roulette/types';
 export { RouletteWheelVisual } from './components/Roulette/components/RouletteWheelVisual';
 export type { RouletteWheelVisualProps } from './components/Roulette/components/RouletteWheelVisual';
 export { RouletteBettingBoard } from './components/Roulette/components/RouletteBettingBoard';
 export type { RouletteBettingBoardProps } from './components/Roulette/components/RouletteBettingBoard';
+export { RouletteControls } from './components/Roulette/components/RouletteControls';
+export type { RouletteControlsProps } from './components/Roulette/components/RouletteControls';
+export {
+  DEFAULT_CHIP_VALUES,
+  NUMBER_ROWS,
+  RED_NUMBERS,
+  WHEEL_SEQUENCE,
+  formatChipAmount,
+  resolveRouletteColor,
+  settleStacks,
+  spotHits,
+  spotKey,
+  spotLabel,
+  spotOdds,
+} from './components/Roulette/rouletteMath';
 
 export { TwentyOne } from './components/TwentyOne/TwentyOne';
 export type {

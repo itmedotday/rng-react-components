@@ -1,40 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { RouletteSpinResult } from '../types';
-
-/** Standard European single-zero roulette wheel sequence (clockwise from top). */
-const WHEEL_SEQUENCE = [
-  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36,
-  11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9,
-  22, 18, 29, 7, 28, 12, 35, 3, 26,
-];
-
-const RED_NUMBERS = new Set([
-  1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
-]);
+import { RED_NUMBERS, WHEEL_SEQUENCE } from '../rouletteMath';
 
 const NUM_SLOTS = 37;
 const CX = 150;
 const CY = 150;
-/** Outer radius of the numbered ring */
 const OUTER_R = 132;
-/** Inner radius of the numbered ring */
 const INNER_R = 80;
-/** Radius at which the number text is centred */
 const TEXT_R = 108;
-/** Radius of the ball's circular orbit path */
 const BALL_ORBIT_R = 141;
-/** Radius of the ball circle itself */
 const BALL_SIZE = 5;
 
 function segmentFill(n: number): string {
-  if (n === 0) return '#16a34a';
-  return RED_NUMBERS.has(n) ? '#b91c1c' : '#111827';
+  if (n === 0) return '#147b3a';
+  return RED_NUMBERS.has(n) ? '#c41e1e' : '#1a1a1a';
 }
 
-/**
- * Returns the SVG arc-path string for a ring segment between two radii and
- * two angles (in degrees, measured from the positive-x axis).
- */
 function ringSegmentPath(
   cx: number,
   cy: number,
@@ -87,28 +68,22 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
   result,
   spinStatus,
 }) => {
-  const ballAngleRef = useRef<number>(-Math.PI / 2); // start at top (12 o'clock)
+  const ballAngleRef = useRef<number>(-Math.PI / 2);
   const rafIdRef = useRef<number | null>(null);
   const [ballPos, setBallPos] = useState(() => posFromAngle(-Math.PI / 2));
 
-  // Ball is visible as soon as the wheel has been spun at least once
-  const ballVisible = isSpinning || result !== null;
-
-  // Animate ball while spinning — setState only inside rAF callback (not in effect body)
   useEffect(() => {
     if (!isSpinning) return;
 
-    let speed = 0.12; // radians per frame (~7.2°/frame at 60fps)
+    let speed = 0.12;
 
     function frame() {
-      // Very gradual decel so the ball is still moving when the spin resolves
       speed = Math.max(speed * 0.9998, 0.03);
-      ballAngleRef.current -= speed; // counter-clockwise orbit
+      ballAngleRef.current -= speed;
       setBallPos(posFromAngle(ballAngleRef.current));
       rafIdRef.current = requestAnimationFrame(frame);
     }
 
-    // Start loop via rAF — setState is only ever called from within the callback
     rafIdRef.current = requestAnimationFrame(frame);
 
     return () => {
@@ -119,7 +94,6 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
     };
   }, [isSpinning]);
 
-  // Snap ball to the landed pocket once the spin resolves
   useEffect(() => {
     if (isSpinning || result === null) return;
 
@@ -128,11 +102,10 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
       rafIdRef.current = null;
     }
 
-    const idx = WHEEL_SEQUENCE.indexOf(result.number);
-    const angle = pocketAngle(idx);
+    const idx = WHEEL_SEQUENCE.indexOf(result.number as (typeof WHEEL_SEQUENCE)[number]);
+    const angle = pocketAngle(idx >= 0 ? idx : 0);
     ballAngleRef.current = angle;
 
-    // Wrap in rAF so setState is called from a subscription callback, not synchronously
     rafIdRef.current = requestAnimationFrame(() => {
       setBallPos(posFromAngle(angle));
       rafIdRef.current = null;
@@ -146,7 +119,6 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
     };
   }, [isSpinning, result]);
 
-  // Build segment data
   const segments = WHEEL_SEQUENCE.map((num, i) => {
     const segDeg = 360 / NUM_SLOTS;
     const startDeg = i * segDeg - 90;
@@ -161,37 +133,32 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
   });
 
   return (
-    <div className="w-full relative px-6 py-6 bg-zinc-950/40 border border-zinc-900/80 rounded-2xl mb-4 flex flex-col items-center justify-center min-h-[320px]">
-      {/* Ambient glow */}
+    <div className="relative w-full flex flex-col items-center justify-center py-3 sm:py-5">
       <div
-        className={`absolute w-64 h-64 rounded-full blur-[60px] opacity-15 transition-all duration-500 pointer-events-none -z-10
-          ${isSpinning ? 'bg-red-500 animate-pulse' : ''}
-          ${!isSpinning && spinStatus === 'win' ? 'bg-emerald-500 opacity-20' : ''}
+        className={`absolute w-48 h-48 sm:w-64 sm:h-64 rounded-full blur-[60px] opacity-20 transition-all duration-500 pointer-events-none
+          ${isSpinning ? 'bg-amber-500 animate-pulse' : ''}
+          ${!isSpinning && spinStatus === 'win' ? 'bg-emerald-500 opacity-25' : ''}
           ${!isSpinning && spinStatus === 'loss' ? 'bg-rose-600 opacity-10' : ''}
         `}
       />
 
       <svg
-        width="300"
-        height="300"
         viewBox="0 0 300 300"
-        className="drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]"
+        className="w-full max-w-[220px] sm:max-w-[280px] md:max-w-[320px] drop-shadow-[0_0_24px_rgba(0,0,0,0.85)]"
         aria-hidden="true"
       >
-        {/* Outer backing ring */}
-        <circle cx={CX} cy={CY} r={OUTER_R + 10} fill="#1a1005" stroke="#3d2c00" strokeWidth="1.5" />
+        <circle cx={CX} cy={CY} r={OUTER_R + 12} fill="#1a1005" stroke="#8a6a2a" strokeWidth="2" />
+        <circle cx={CX} cy={CY} r={OUTER_R + 6} fill="none" stroke="#3d2c00" strokeWidth="4" />
 
-        {/* Ball track groove */}
         <circle
           cx={CX}
           cy={CY}
           r={BALL_ORBIT_R + 2}
           fill="none"
           stroke="#2a2a2a"
-          strokeWidth="9"
+          strokeWidth="10"
         />
 
-        {/* Number segments */}
         {segments.map(({ num, startDeg, endDeg, tx, ty, midDeg, fill, isLanded }) => (
           <g key={num}>
             <path
@@ -200,16 +167,14 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
               stroke="#000"
               strokeWidth="0.5"
             />
-            {/* Gold highlight border on landed segment */}
             {isLanded && (
               <path
                 d={ringSegmentPath(CX, CY, INNER_R, OUTER_R, startDeg, endDeg)}
-                fill="rgba(251,191,36,0.25)"
+                fill="rgba(251,191,36,0.28)"
                 stroke="#fbbf24"
                 strokeWidth="1.5"
               />
             )}
-            {/* Number text — rotated to align radially */}
             <text
               x={tx}
               y={ty}
@@ -226,66 +191,60 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
           </g>
         ))}
 
-        {/* Inner hub background */}
-        <circle cx={CX} cy={CY} r={INNER_R - 2} fill="#0f0f0f" stroke="#2a2a2a" strokeWidth="1" />
+        <circle cx={CX} cy={CY} r={INNER_R - 2} fill="#0a0a0a" stroke="#2a2a2a" strokeWidth="1" />
 
-        {/* Hub decorative spokes */}
-        {[0, 60, 120, 180, 240, 300].map((deg) => {
+        {/* Gold four-prong spindle */}
+        {[0, 90, 180, 270].map((deg) => {
           const rad = (deg * Math.PI) / 180;
           return (
             <line
               key={deg}
-              x1={CX + (INNER_R - 4) * Math.cos(rad)}
-              y1={CY + (INNER_R - 4) * Math.sin(rad)}
-              x2={CX + 22 * Math.cos(rad)}
-              y2={CY + 22 * Math.sin(rad)}
-              stroke="#2a2a2a"
-              strokeWidth="2"
+              x1={CX + 14 * Math.cos(rad)}
+              y1={CY + 14 * Math.sin(rad)}
+              x2={CX + 48 * Math.cos(rad)}
+              y2={CY + 48 * Math.sin(rad)}
+              stroke="#c9a227"
+              strokeWidth="5"
+              strokeLinecap="round"
             />
           );
         })}
-        <circle cx={CX} cy={CY} r={18} fill="#1a1a1a" stroke="#333" strokeWidth="1" />
-        <circle cx={CX} cy={CY} r={7} fill="#3d3d3d" />
+        <circle cx={CX} cy={CY} r={22} fill="#1a1a1a" stroke="#c9a227" strokeWidth="2" />
+        <circle cx={CX} cy={CY} r={10} fill="#d4af37" stroke="#8a6a2a" strokeWidth="1" />
+        <circle cx={CX} cy={CY} r={3.5} fill="#f5e6a3" />
 
-        {/* Spinning ball */}
-        {ballVisible && (
-          <>
-            {/* Subtle glow ring around ball when landed */}
-            {!isSpinning && result !== null && (
-              <circle
-                cx={ballPos.x}
-                cy={ballPos.y}
-                r={BALL_SIZE + 4}
-                fill="rgba(255,255,255,0.1)"
-                stroke="rgba(255,255,255,0.25)"
-                strokeWidth="1"
-              />
-            )}
-            <circle
-              cx={ballPos.x}
-              cy={ballPos.y}
-              r={BALL_SIZE}
-              fill="white"
-              stroke="#d1d5db"
-              strokeWidth="0.5"
-              style={{ filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.9))' }}
-            />
-            {/* Ball shine */}
-            <circle
-              cx={ballPos.x - 1.5}
-              cy={ballPos.y - 1.5}
-              r={1.5}
-              fill="rgba(255,255,255,0.7)"
-            />
-          </>
+        {/* Ball always on the wheel */}
+        {!isSpinning && result !== null && (
+          <circle
+            cx={ballPos.x}
+            cy={ballPos.y}
+            r={BALL_SIZE + 4}
+            fill="rgba(255,255,255,0.12)"
+            stroke="rgba(255,255,255,0.3)"
+            strokeWidth="1"
+          />
         )}
+        <circle
+          cx={ballPos.x}
+          cy={ballPos.y}
+          r={BALL_SIZE}
+          fill="#f8fafc"
+          stroke="#d1d5db"
+          strokeWidth="0.5"
+          style={{ filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.9))' }}
+        />
+        <circle
+          cx={ballPos.x - 1.5}
+          cy={ballPos.y - 1.5}
+          r={1.5}
+          fill="rgba(255,255,255,0.75)"
+        />
       </svg>
 
-      {/* Outcome badge overlaid below wheel */}
       {!isSpinning && spinStatus !== 'idle' && result && (
-        <div className="mt-2 flex items-center gap-3">
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
           <span
-            className={`px-3 py-1 rounded-full border text-xs font-black uppercase tracking-wider
+            className={`px-3 py-1 rounded-md border text-xs font-black uppercase tracking-wider
               ${result.color === 'red' ? 'bg-red-500/20 border-red-500/50 text-red-400' : ''}
               ${result.color === 'black' ? 'bg-zinc-700/30 border-zinc-500/50 text-zinc-100' : ''}
               ${result.color === 'green' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : ''}
@@ -294,11 +253,11 @@ export const RouletteWheelVisual: React.FC<RouletteWheelVisualProps> = ({
             #{result.number} {result.color}
           </span>
           <span
-            className={`px-3 py-1 rounded-full border text-xs font-black uppercase tracking-wider
+            className={`px-3 py-1 rounded-md border text-xs font-black uppercase tracking-wider
               ${spinStatus === 'win' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-rose-500/20 border-rose-500/50 text-rose-400'}
             `}
           >
-            {spinStatus === 'win' ? 'WIN!' : 'MISS'}
+            {spinStatus === 'win' ? `+${result.profit}` : `${result.profit}`}
           </span>
         </div>
       )}
