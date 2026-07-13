@@ -125,6 +125,33 @@ export type {
   PhaserRouletteResult,
 } from './components/PhaserRoulette/types';
 
+export { PhaserCoinFlip } from './components/PhaserCoinFlip/PhaserCoinFlip';
+export type {
+  PhaserCoinFlipHandle,
+  PhaserCoinFlipProps,
+  PhaserCoinFlipResult,
+} from './components/PhaserCoinFlip/types';
+
+export { PhaserD20Roll } from './components/PhaserD20Roll/PhaserD20Roll';
+export type {
+  PhaserD20RollHandle,
+  PhaserD20RollProps,
+  PhaserD20RollResult,
+} from './components/PhaserD20Roll/types';
+
+export { PhaserDiceSlider } from './components/PhaserDiceSlider/PhaserDiceSlider';
+export type {
+  PhaserDiceSliderHandle,
+  PhaserDiceSliderProps,
+  PhaserDiceSliderResult,
+} from './components/PhaserDiceSlider/types';
+
+export { PhaserTwentyOne } from './components/PhaserTwentyOne/PhaserTwentyOne';
+export type {
+  PhaserTwentyOneHandle,
+  PhaserTwentyOneProps,
+} from './components/PhaserTwentyOne/types';
+
 export { TwentyOne } from './components/TwentyOne/TwentyOne';
 export type {
   TwentyOneHandle,
