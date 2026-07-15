@@ -1,0 +1,11 @@
+{
+  "name": "rng-react-components",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  // ponytail: mirrors .github/workflows/ci.yml exactly — Chromium is required for `npm run test` (Playwright browser tests)
+  "postCreateCommand": "npm ci && npx playwright install --with-deps chromium",
+  "forwardPorts": [5173, 6006],
+  "portsAttributes": {
+    "5173": { "label": "vite" },
+    "6006": { "label": "storybook" }
+  }
+}
